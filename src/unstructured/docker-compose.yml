@@ -1,0 +1,8 @@
+services:
+  unstructured:
+    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+    container_name: unstructured
+    ports:
+      - "9500:9500"
+    environment:
+      - PORT=9500
