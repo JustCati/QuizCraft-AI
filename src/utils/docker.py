@@ -37,8 +37,13 @@ def manage_container(func, *args, **kwargs):
         container_name = kwargs.get("container", None)
         if path and container_name:
             startContainer(osp.join(os.getcwd(), "src", "unstructured"), container_name=container_name)
-            func(*args, **kwargs)
-            stopContainer(osp.join(os.getcwd(), "src", "unstructured"), "unstructured")
+
+            try:
+                func(*args, **kwargs)
+                stopContainer(osp.join(os.getcwd(), "src", "unstructured"), "unstructured")
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                stopContainer(osp.join(os.getcwd(), "src", "unstructured"), "unstructured")
         else:
             raise ValueError("Path and container name must be provided!")
     return wrapper
