@@ -21,3 +21,11 @@ def startContainer(path, container_name):
     else:
         print(f"Container {container_name} is already running!")
 
+
+
+def stopContainer(path, container_name):
+    if isContainerRunning(container_name):
+        subprocess.run(["docker", "compose", "-f", osp.join(path, "docker-compose.yml"), "down", container_name])
+    else:
+        print(f"Container {container_name} is not running!")
+
