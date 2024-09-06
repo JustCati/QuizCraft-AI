@@ -6,3 +6,15 @@ services:
       - "9500:9500"
     environment:
       - PORT=9500
+    healthcheck:
+      test: wget http://localhost:9500/healthcheck -q -O - | grep "OK"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  dummy:
+    image: hello-world
+    container_name: dummy
+    depends_on:
+      unstructured:
+        condition: service_healthy

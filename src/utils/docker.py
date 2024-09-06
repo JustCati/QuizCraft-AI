@@ -18,8 +18,7 @@ def isContainerRunning(container_name):
 
 def startContainer(path, container_name):
     if not isContainerRunning(container_name):
-        subprocess.run(["docker", "compose", "-f", osp.join(path, "docker-compose.yml"), "up", "-d", container_name])
-        time.sleep(5)
+        subprocess.run(["docker", "compose", "-f", osp.join(path, "docker-compose.yml"), "up", "-d"])
     else:
         print(f"Container {container_name} is already running!")
 
@@ -27,7 +26,7 @@ def startContainer(path, container_name):
 
 def stopContainer(path, container_name):
     if isContainerRunning(container_name):
-        subprocess.run(["docker", "compose", "-f", osp.join(path, "docker-compose.yml"), "down", container_name])
+        subprocess.run(["docker", "compose", "-f", osp.join(path, "docker-compose.yml"), "down"])
     else:
         print(f"Container {container_name} is not running!")
 
