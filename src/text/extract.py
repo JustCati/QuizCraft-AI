@@ -29,10 +29,11 @@ def extract(file_path, model, processor, prompt):
             {
                 "role": "user",
                 "content" : [
-                    {"type": "image",
+                    {   
+                        "type": "image",
                         "image": "data:image;base64," + img_64,
-                        "resized_height": 280,
-                        "resized_width": 420
+                        "resized_height": 943,
+                        "resized_width": 1417
                     },
                     {"type": "text", "text": prompt}
                 ]
@@ -51,9 +52,9 @@ def extract(file_path, model, processor, prompt):
             padding=True,
             return_tensors="pt"
         )
-        inputs = inputs.to("cuda")
+        inputs = inputs.to(model.device)
 
-        generated_ids = model.generate(**inputs, max_new_tokens=1024)
+        generated_ids = model.generate(**inputs, max_new_tokens=2048)
         generated_ids_trimmed = [
             out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
         ]
