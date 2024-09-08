@@ -4,8 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
-docker = "*"
+transformers = {git = "git+https://github.com/huggingface/transformers"}
+pdf2image = "*"
+qwen-vl-utils = "*"
+torch = "*"
+torchvision = "*"
 
 [dev-packages]
 
