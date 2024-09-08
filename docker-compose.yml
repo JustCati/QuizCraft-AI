@@ -1,0 +1,28 @@
+services:
+  torch:
+    image: pytorch/pytorch:latest
+    container_name: torch
+    ipc: host
+    volumes:
+      - .:/workspace
+      - ./huggingface_models:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: bash -c "apt-get update && apt-get install -y git poppler-utils && cd /workspace && python3 -m pip install -r requirements.txt && pip install -U torch torchvision torchaudio && touch /root/done.txt && tail -f /dev/null"
+    healthcheck:
+      test: "test -f /root/done.txt"
+      interval: 30s
+      timeout: 30s
+      retries: 1000
+
+  dummy:
+    image: hello-world
+    container_name: dummy
+    depends_on:
+      torch:
+        condition: service_healthy
