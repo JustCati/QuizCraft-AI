@@ -1,0 +1,9 @@
+accelerate
+qwen-vl-utils
+pdf2image
+optimum
+auto-gptq
+torch
+torchvision
+autoawq==0.2.6
+transformers @ git+https://github.com/huggingface/transformers@6ff6069fa7e23dac9af999fb28503fec9d48c5bf
