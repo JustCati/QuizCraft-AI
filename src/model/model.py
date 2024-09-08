@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoTokenizer, AutoProcessor, Qwen2VLForConditionalGeneration
+from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 
 
 
