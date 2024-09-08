@@ -13,7 +13,7 @@ You are tasked with extracting **only the main text** from this Image depicting 
 5. **Logos or Watermarks:** Ignore any small text related to branding, logos, or watermarks.
 
 ### **Guidelines for Extraction:**
-- **Language:** The text will be either in **English** or **Italian**. Ensure that both languages are supported in your extraction.
+- **Language:** The text will be either in **English** or **Italian**. Ensure that both languages are supported in your extraction but output only in Italian.
 - **Size & Position:** Prioritize larger, central text (likely titles) and body text in the middle of the image for extraction.
 - **Visual Cues:** If text is in a standard text box format and is not overlaid on an image, it should be considered for extraction.
 - **Ignore Decorations:** Any decorative or graphical text elements, like stylized words over images or diagrams, should be ignored.
