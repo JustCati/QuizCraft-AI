@@ -1,0 +1,20 @@
+### **Task Instruction:**
+You are tasked with extracting **only the main text** from this Image depicting formatted document or slides. The main text consists of **titles** and **content text** that appear on the image. The text may be in **English** or **Italian**. Do not extract any text that appears in headers, footers, within images, or as hyperlinks or URLs.
+
+### **What to Extract:**
+1. **Titles:** Extract the main title or heading of the image. This is typically the largest text or bold text at the top of the image.
+2. **Content Text:** Extract all bullet points, paragraphs, or body content that appear beneath the title. This includes definitions, explanations, or any descriptive text directly related to the image’s topic.
+
+### **What to Ignore:**
+1. **Headers:** Ignore any text that appears in the top part of the image if it seems to serve as a repeating header or template element.
+2. **Footers:** Ignore all footnotes, page numbers, or any repeated footer text such as copyright information or image numbers.
+3. **Image Text:** Ignore any text that is embedded within images, charts, or diagrams. Focus only on text that is written as part of the image layout.
+4. **URLs and Hyperlinks:** Exclude any web addresses, URLs, or hyperlinks, whether embedded in the content or displayed as text.
+5. **Logos or Watermarks:** Ignore any small text related to branding, logos, or watermarks.
+
+### **Guidelines for Extraction:**
+- **Language:** The text will be either in **English** or **Italian**. Ensure that both languages are supported in your extraction.
+- **Size & Position:** Prioritize larger, central text (likely titles) and body text in the middle of the image for extraction.
+- **Visual Cues:** If text is in a standard text box format and is not overlaid on an image, it should be considered for extraction.
+- **Ignore Decorations:** Any decorative or graphical text elements, like stylized words over images or diagrams, should be ignored.
+- **Consistency:** Extract text consistently from each image, following the same logic to ensure uniformity across all images.
