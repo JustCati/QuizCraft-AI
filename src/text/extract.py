@@ -12,6 +12,12 @@ from src.utils.pdf2img import convert_to_img, convert_to_base64
 
 def extract(file_path, model, processor, prompt):
     out_path = file_path.replace("RAW", "EXTRACTED")
+    out_path = out_path.replace(".pdf", ".txt").replace(".jpg", ".txt")
+
+    if os.path.exists(out_path):
+        print(f"File {out_path} already exists. Skipping...")
+        return
+
     if not os.path.exists(os.path.dirname(out_path)):
         os.makedirs(os.path.dirname(out_path))
 
@@ -20,7 +26,7 @@ def extract(file_path, model, processor, prompt):
     else:
         dir = [file_path]
 
-    for img in dir:
+    for idx, img in enumerate(dir):
         if type(img) == str:
             img = Image.open(file_path)
         img_64 = convert_to_base64(img)
@@ -61,6 +67,8 @@ def extract(file_path, model, processor, prompt):
         output_text = processor.batch_decode(
             generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
-        print(output_text)
-        print()
+
+        with open(out_path, "a") as f:
+            f.write(output_text[0])
+        print(f"Extracted data from image n°{idx} with num characters: ", len(output_text[0]))
     return
