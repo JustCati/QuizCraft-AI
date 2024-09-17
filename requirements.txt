@@ -3,6 +3,7 @@ qwen-vl-utils
 pdf2image
 optimum
 auto-gptq
+tqdm
 torch
 torchvision
 autoawq==0.2.6
