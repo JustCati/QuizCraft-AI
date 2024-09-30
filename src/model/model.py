@@ -1,26 +1,41 @@
-from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
-from transformers import AutoTokenizer, AutoModel
+from src.utils.pdf2img import convert_to_base64
+
+from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
 
 
-# Qwen/Qwen2-VL-7B-Instruct-AWQ
-# Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4
-
-def getQwen2VL7B(name = "Qwen/Qwen2-VL-7B-Instruct-AWQ", dtype = "auto", device = "cpu"):
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
-        name, torch_dtype=dtype, device_map=device
-    )
-    processor = AutoProcessor.from_pretrained(name)
-    return model, processor
 
 
-def getGOTOCR(name = "ucaslcl/GOT-OCR2_0", trust_remote_code=True):
-    tokenizer = AutoTokenizer.from_pretrained(name, trust_remote_code=trust_remote_code)
-    model = AutoModel.from_pretrained(name,
-                                      trust_remote_code=trust_remote_code, 
-                                      low_cpu_mem_usage=True,
-                                      device_map='cuda',
-                                      use_safetensors=True, 
-                                      pad_token_id=tokenizer.eos_token_id)
-    model.generation_config.pad_token_id = tokenizer.pad_token_id
-    model = model.eval().cuda()
-    return model, tokenizer
+def prompt_func(data):
+    text = data["text"]
+    image = data["image"]
+
+    image_part = {
+        "type": "image_url",
+        "image_url": f"data:image/jpeg;base64,{image}",
+    }
+
+    content_parts = []
+
+    text_part = {"type": "text", "text": text}
+
+    content_parts.append(image_part)
+    content_parts.append(text_part)
+
+    return [HumanMessage(content=content_parts)]
+
+
+# "llava:34b-v1.6-q3_K_M"
+def getModel(name, temperature = 0.0, num_predict = 512):
+    return ChatOllama(model=name, 
+                       temperature=temperature,
+                       num_predict=num_predict)
+
+
+def extract_text_from_image(model, img, prompt):
+    img = convert_to_base64(img)
+
+    chain = prompt_func | model | StrOutputParser()
+    query_chain = chain.invoke({"text": prompt, "image": img})
+    return query_chain
