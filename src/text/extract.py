@@ -3,7 +3,10 @@ from PIL import Image
 from tqdm import tqdm
 from tempfile import NamedTemporaryFile
 
-from qwen_vl_utils import process_vision_info
+from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+
 from src.utils.pdf2img import convert_to_img, convert_to_base64
 
 
@@ -62,16 +65,10 @@ def extract(args, file_path, model, processor, prompt):
 
     text = []
     for img in tqdm(dir):
-        if args.model.lower() == "qwen2":
-            if type(img) == str:
-                img = Image.open(file_path)
-            output_text = qwen_extract(img, model, processor, prompt)
-            text.append(output_text[0])
-        else:
-            with NamedTemporaryFile(mode="wb") as f:
-                img.save(f.name, format="JPEG")
-                output_text = ocr_extract(f.name, model, processor)
-                text.append(output_text)
+        if type(img) == str:
+            img = Image.open(file_path)
+        output_text = extract(img, prompt)
+        text.append(output_text)
 
     #! FORMAT TEXT HERE
 
