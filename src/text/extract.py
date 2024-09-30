@@ -9,53 +9,37 @@ from src.utils.pdf2img import convert_to_img, convert_to_base64
 
 
 
+def prompt_func(data):
+    text = data["text"]
+    image = data["image"]
 
-def ocr_extract(file_path, model, tokenizer):
-    res = model.chat(tokenizer, file_path, ocr_type='format')
-    return res
+    image_part = {
+        "type": "image_url",
+        "image_url": f"data:image/jpeg;base64,{image}",
+    }
+
+    content_parts = []
+
+    text_part = {"type": "text", "text": text}
+
+    content_parts.append(image_part)
+    content_parts.append(text_part)
+
+    return [HumanMessage(content=content_parts)]
 
 
 
-def qwen_extract(img, model, processor, prompt):
-    img_64 = convert_to_base64(img)
 
-    messages = [
-            {
-                "role": "user",
-                "content" : [
-                    {   
-                        "type": "image",
-                        "image": "data:image;base64," + img_64,
-                        "resized_height": 943,
-                        "resized_width": 1417
-                    },
-                    {"type": "text", "text": prompt}
-                ]
-            }
-        ]
+def extract(img, prompt):
+    img = convert_to_base64(img)
 
-    text = processor.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
-    )
+    model = ChatOllama(model="llava:34b-v1.6-q3_K_M", 
+                       temperature=0.0,
+                       num_predict=512)
 
-    image_inputs, video_inputs = process_vision_info(messages)
-    inputs = processor(
-        text=[text],
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt"
-    )
-    inputs = inputs.to(model.device)
-
-    generated_ids = model.generate(**inputs, max_new_tokens=2048)
-    generated_ids_trimmed = [
-        out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-    ]
-    output_text = processor.batch_decode(
-        generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-    )
-    return output_text
+    chain = prompt_func | model | StrOutputParser()
+    query_chain = chain.invoke({"text": prompt, "image": img})
+    return query_chain
 
 
 
