@@ -33,7 +33,7 @@ def prompt_func(data):
 
 
 
-def extract(img, prompt):
+def model_extract(img, prompt):
     img = convert_to_base64(img)
 
     model = ChatOllama(model="llava:34b-v1.6-q3_K_M", 
@@ -47,7 +47,7 @@ def extract(img, prompt):
 
 
 
-def extract(args, file_path, model, processor, prompt):
+def extract(file_path, prompt):
     out_path = file_path.replace("RAW", "EXTRACTED")
     out_path = out_path.replace(".pdf", ".txt").replace(".jpg", ".txt")
 
@@ -67,7 +67,7 @@ def extract(args, file_path, model, processor, prompt):
     for img in tqdm(dir):
         if type(img) == str:
             img = Image.open(file_path)
-        output_text = extract(img, prompt)
+        output_text = model_extract(img, prompt)
         text.append(output_text)
 
     #! FORMAT TEXT HERE
