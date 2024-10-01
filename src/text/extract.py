@@ -25,7 +25,7 @@ def extract(file_path, prompt):
     else:
         dir = [file_path]
 
-    model = getModel("llava:34b-v1.6-q3_K_M", num_predict=1024)
+    model = getModel("llava:34b-v1.6-q3_K_M", num_predict=512)
 
     text = []
     for img in tqdm(dir):
