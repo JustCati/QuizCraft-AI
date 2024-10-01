@@ -1,9 +1,18 @@
+import subprocess
 from src.utils.pdf2img import convert_to_base64
 
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
+
+
+
+def runModel(name):
+    subprocess.Popen(['ollama', 'run', name], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
+def stopModel(name):
+    subprocess.Popen(['ollama', 'stop', name], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 

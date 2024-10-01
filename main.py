@@ -3,11 +3,27 @@ import argparse
 import os.path as osp
 
 from src.text.extract import extract
+from src.model.model import runModel, stopModel
 
 import warnings
 warnings.filterwarnings("ignore")
 
 
+
+def ollama(func):
+    def wrapper(*args, **kwargs):
+        runModel("llava:34b-v1.6-q3_K_M")
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            stopModel("llava:34b-v1.6-q3_K_M")
+    return wrapper
+
+
+
+@ollama
 def main(args):
     data_path = osp.join(os.getcwd(), args.data_path)
     raw_data_path = osp.join(data_path, "RAW")
