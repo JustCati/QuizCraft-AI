@@ -8,11 +8,10 @@ from langchain_core.output_parsers import StrOutputParser
 
 
 
-def runModel(name):
-    subprocess.Popen(['ollama', 'run', name], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-
-def stopModel(name):
-    subprocess.Popen(['ollama', 'stop', name], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+def manage_Model(name, action = "run"):
+    if action not in ["run", "stop"]:
+        raise ValueError(f"Invalid action: {action}")
+    subprocess.Popen(['ollama', action, name], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
 

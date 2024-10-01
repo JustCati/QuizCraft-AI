@@ -3,7 +3,7 @@ import argparse
 import os.path as osp
 
 from src.text.extract import extract
-from src.model.model import runModel, stopModel
+from src.model.model import manage_Model
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -12,13 +12,13 @@ warnings.filterwarnings("ignore")
 
 def ollama(func):
     def wrapper(*args, **kwargs):
-        runModel("llava:34b-v1.6-q3_K_M")
+        manage_Model("llava:34b-v1.6-q3_K_M", "run")
         try:
             func(*args, **kwargs)
         except Exception as e:
             print(f"Error: {e}")
         finally:
-            stopModel("llava:34b-v1.6-q3_K_M")
+            manage_Model("llava:34b-v1.6-q3_K_M", "stop")
     return wrapper
 
 
