@@ -1,7 +1,26 @@
+from PIL import Image
+
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
-from src.utils.pdf2img import convert_to_base64
+from src.utils.pdf2img import convert_to_img, convert_to_base64
+
+
+
+
+def extract_file(file, model, PROMPT):
+    if file.path.endswith(".pdf"):
+        dir = convert_to_img(file.path)
+    else:
+        dir = [file.path]
+
+    text = []
+    for img in dir:
+        if type(img) == str:
+            img = Image.open(file.path)
+        output_text = extract_text_from_image(model, img, PROMPT)
+        text.append(output_text)
+    return text
 
 
 
