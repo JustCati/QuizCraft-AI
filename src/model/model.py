@@ -24,5 +24,5 @@ class OllamaModel:
         self.__manage_Model("run")
         return self.model
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.__manage_Model("stop")
