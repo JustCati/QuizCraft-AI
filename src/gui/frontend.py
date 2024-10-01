@@ -27,8 +27,10 @@ async def on_chat_start():
             max_files=10
         ).send()
 
-    with OllamaModel("llava:34b-v1.6-q3_K_M", temperature=0.0, num_predict=512) as model:
-        for idx, file in enumerate(files):
-            await cl.Message(content=f"Processing file n° {idx}...").send()
+    # llava:34b-v1.6-q3_K_M
+    # llava-llama3:8b-v1.1-fp16
+    with OllamaModel("llava-llama3:8b-v1.1-fp16", temperature=0.0, num_predict=512) as model:
+        for file in files:
+            await cl.Message(content=f"Processing file {file.name}...").send()
             text = await cl.make_async(extract_file)(file, model, PROMPT)
             await cl.Message(content="\n".join(text)).send()
