@@ -36,6 +36,7 @@ def prompt_func(data):
 
 # "llava:34b-v1.6-q3_K_M"
 def getModel(name, temperature = 0.0, num_predict = 512):
+    manage_Model(name, "run")
     return ChatOllama(model=name, 
                        temperature=temperature,
                        num_predict=num_predict)
