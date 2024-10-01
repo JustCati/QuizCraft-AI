@@ -250,3 +250,4 @@ data/*
 huggingface_models/*
 .chainlit/*
 .files/*
+chainlit.md
