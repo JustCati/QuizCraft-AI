@@ -1,25 +1,31 @@
-from PIL import Image
+import os
+import tempfile
+import subprocess
 
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
-from src.utils.pdf2img import convert_to_img, convert_to_base64
+from src.utils.pdf2img2pdf import convert_img2pdf
 
 
 
 
-def extract_file(file, model, PROMPT):
-    if file.path.endswith(".pdf"):
-        dir = convert_to_img(file.path)
-    else:
-        dir = [file.path]
-
+def extract_file(file):
     text = []
-    for img in dir:
-        if type(img) == str:
-            img = Image.open(file.path)
-        output_text = extract_text_from_image(model, img, PROMPT)
-        text.append(output_text)
+    with tempfile.TemporaryDirectory() as dir:
+        if file.endswith(".png") or file.endswith(".jpg"):
+            images = [file]
+            pdf_path = convert_img2pdf(images, os.path.join(dir, "temp.pdf"))
+            file = pdf_path
+
+        process = subprocess.run(["marker_single", "--batch_multiplier", "2", file, dir], stdout=subprocess.PIPE)
+        outFolder = process.stdout.decode("utf-8").strip().split(" ")[-2]
+
+        path = os.path.join(dir, outFolder)
+        for file in os.listdir(path):
+            if file.endswith(".md"):
+                with open(os.path.join(path, file), "r") as f:
+                    text.append(f.read())
     return text
 
 
