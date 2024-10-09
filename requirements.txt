@@ -29,7 +29,6 @@ literalai==0.0.607
 marshmallow==3.22.0
 mypy-extensions==1.0.0
 nest-asyncio==1.6.0
-nms_1d_cpu==0.0.0
 numpy==1.26.4
 ollama==0.3.3
 opentelemetry-api==1.27.0
