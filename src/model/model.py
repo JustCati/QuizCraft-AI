@@ -1,6 +1,6 @@
 import subprocess
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama, OllamaEmbeddings
-
 
 
 
@@ -37,7 +37,7 @@ class GenericOllamaModel(object):
 
 
 
-class LanguageModel(GenericOllamaModel):
+class OllamaLanguageModel(GenericOllamaModel):
     def __init__(self, model_name, temperature = 0.0, num_predict = 512):
         super().__init__(model_name)
         super().check_model()
@@ -47,8 +47,24 @@ class LanguageModel(GenericOllamaModel):
 
 
 
-class EmbeddingModel(GenericOllamaModel):
+class OllamaEmbeddingModel(GenericOllamaModel):
     def __init__(self, model_name):
         super().__init__(model_name)
         super().check_model()
         self.model = OllamaEmbeddings(model=model_name)
+
+
+# mixedbread-ai/mxbai-embed-large-v1
+class HuggingFaceEmbeddingModel():
+    def __init__(self, model_name):
+        model_kwargs = {'device':'cuda', 'trust_remote_code': True}
+        encode_kwargs = {'normalize_embeddings': True}
+        self.model = HuggingFaceEmbeddings(model_name=model_name, 
+                                           model_kwargs=model_kwargs,
+                                           encode_kwargs=encode_kwargs)
+
+    def __enter__(self):
+        return self.model
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
