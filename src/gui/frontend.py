@@ -10,16 +10,14 @@ from src.model.model import HuggingFaceEmbeddingModel
 from src.model.inference import extract_file, index_files, summarize
 
 
-PROMPT = ""
-with open(osp.join("src", "model", "prompt.txt"), "r") as f:
-    PROMPT = f.read()
-with HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1") as embed_model:
-    vector_store = get_empty_vector_store(embed_model)
+
+embed_model = HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1").model
+vector_store = get_empty_vector_store(embed_model)
 
 
 @cl.on_chat_start
 async def main():
-    await cl.Message(content="Send a file").send()
+    await cl.Message(content="Send a file!").send()
 
 
 @cl.on_message
@@ -36,6 +34,5 @@ async def main(message: cl.Message):
         total_text = total_text[0]
         await cl.make_async(index_files)(total_text)
 
-    answer = await cl.make_async(summarize)(message.content, vector_store, PROMPT)
+    answer = await cl.make_async(summarize)(message.content, vector_store)
     await cl.Message(content=answer).send()
-    
