@@ -10,7 +10,7 @@ from src.utils.pdf2img2pdf import convert_img2pdf
 
 
 
-def extract_file(file):
+def extract_file(file, batch_multiplier=2):
     text = []
     with tempfile.TemporaryDirectory() as dir:
         if file.endswith(".png") or file.endswith(".jpg"):
@@ -18,7 +18,7 @@ def extract_file(file):
             pdf_path = convert_img2pdf(images, os.path.join(dir, "temp.pdf"))
             file = pdf_path
 
-        process = subprocess.run(["marker_single", "--batch_multiplier", "2", file, dir], stdout=subprocess.PIPE)
+        process = subprocess.run(["marker_single", "--batch_multiplier", str(batch_multiplier), file, dir], stdout=subprocess.PIPE)
         outFolder = process.stdout.decode("utf-8").strip().split(" ")[-2]
 
         path = os.path.join(dir, outFolder)
