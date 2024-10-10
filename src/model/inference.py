@@ -2,12 +2,11 @@ import os
 import tempfile
 import subprocess
 
-from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
-from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
+from src.model.model import OllamaLanguageModel
 
 from src.utils.pdf2img2pdf import convert_img2pdf
 from src.text.indexing import (get_semantic_doc, 
@@ -43,14 +42,17 @@ def format_docs(docs):
 
 
 async def index_files(files_text):
-    with HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1") as embed_model:
-        vector_store = get_empty_vector_store(embed_model)
-        for text in files_text:
-            docs = get_semantic_doc(text, embed_model)
-            await vector_store.aadd_documents(docs)
+    global embed_model
+    vector_store = get_empty_vector_store(embed_model)
+    for text in files_text:
+        docs = get_semantic_doc(text, embed_model)
+        await vector_store.aadd_documents(docs)
 
 
-def summarize(msg, vector_store, PROMPT):
+def summarize(msg, vector_store):
+    PROMPT = ""
+    with open(os.path.join("src", "model", "prompt.txt"), "r") as f:
+        PROMPT = f.read()
     with OllamaLanguageModel("qwen2.5:32b-instruct-q3_K_M") as llm:
         retriever = get_retriever(vector_store)
         prompt = PromptTemplate.from_template(PROMPT)
