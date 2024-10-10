@@ -3,9 +3,7 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 
 
-# llava:34b-v1.6-q3_K_M
 # qwen2.5:32b-instruct-q3_K_M
-
 # mxbai-embed-large
 
 
