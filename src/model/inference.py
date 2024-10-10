@@ -29,14 +29,17 @@ def extract_file(file, batch_multiplier=2):
     return text
 
 
-
-def index_files(vector_store, files, embeddings_model):
-    for text in files:
-        docs = get_semantic_doc(text, embeddings_model)
-        add_to_vector_store(vector_store, docs)
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
 
-    content_parts = []
+async def index_files(files_text):
+    with HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1") as embed_model:
+        vector_store = get_empty_vector_store(embed_model)
+        for text in files_text:
+            docs = get_semantic_doc(text, embed_model)
+            await vector_store.aadd_documents(docs)
+
 
     text_part = {"type": "text", "text": text}
 
