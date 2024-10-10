@@ -3,11 +3,20 @@ import tempfile
 import subprocess
 
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
+from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
+
 from src.utils.pdf2img2pdf import convert_img2pdf
+from src.text.indexing import (get_semantic_doc, 
+                               get_empty_vector_store,
+                               get_retriever)
 
 
+# qwen2.5:32b-instruct-q3_K_M
+# mxbai-embed-large
 
 
 def extract_file(file, batch_multiplier=2):
@@ -41,17 +50,15 @@ async def index_files(files_text):
             await vector_store.aadd_documents(docs)
 
 
-    text_part = {"type": "text", "text": text}
+def summarize(msg, vector_store, PROMPT):
+    with OllamaLanguageModel("qwen2.5:32b-instruct-q3_K_M") as llm:
+        retriever = get_retriever(vector_store)
+        prompt = PromptTemplate.from_template(PROMPT)
 
-    content_parts.append(image_part)
-    content_parts.append(text_part)
-
-    return [HumanMessage(content=content_parts)]
-
-
-def extract_text_from_image(model, img, prompt):
-    img = convert_to_base64(img)
-
-    chain = prompt_func | model | StrOutputParser()
-    query_chain = chain.invoke({"text": prompt, "image": img})
-    return query_chain
+        lang_chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
+        return lang_chain.invoke(msg)
