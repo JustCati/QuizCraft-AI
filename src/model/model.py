@@ -12,7 +12,9 @@ class GenericOllamaModel(object):
     def __retrieve_available_models(self):
         process = subprocess.run(["ollama", "list"], stdout=subprocess.PIPE)
         outFolder = process.stdout.decode("utf-8").split("\n")[1:-1]
-        return [x.split(" ")[0] for x in outFolder]
+        models = [x.split(" ")[0] for x in outFolder]
+        models = [x.replace(":latest", "") for x in models]
+        return models
 
     def check_model(self):
         if self.model_name not in self.available_models:
