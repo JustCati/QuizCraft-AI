@@ -29,14 +29,12 @@ def extract_file(file, batch_multiplier=2):
     return text
 
 
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
 
+def index_files(vector_store, files, embeddings_model):
+    for text in files:
+        docs = get_semantic_doc(text, embeddings_model)
+        add_to_vector_store(vector_store, docs)
 
-    image_part = {
-        "type": "image_url",
-        "image_url": f"data:image/jpeg;base64,{image}",
-    }
 
     content_parts = []
 
