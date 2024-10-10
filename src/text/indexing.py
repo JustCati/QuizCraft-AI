@@ -1,4 +1,3 @@
-from uuid import uuid4
 from langchain_chroma import Chroma
 from langchain_experimental.text_splitter import SemanticChunker
 
@@ -18,11 +17,6 @@ def get_empty_vector_store(embeddings_model):
         embedding_function=embeddings_model
     )
     return vector_store
-
-
-def add_to_vector_store(vector_store: Chroma, docs):
-    uuids = [str(uuid4()) for _ in range(len(docs))] 
-    vector_store.add_documents(documents=docs, ids=uuids)
 
 
 def get_retriever(vector_store: Chroma):
