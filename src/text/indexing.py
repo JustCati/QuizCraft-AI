@@ -27,7 +27,3 @@ def add_to_vector_store(vector_store: Chroma, docs):
 
 def get_retriever(vector_store: Chroma):
     return vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 6})
-
-
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)

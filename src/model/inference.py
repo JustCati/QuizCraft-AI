@@ -29,10 +29,9 @@ def extract_file(file):
     return text
 
 
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
-def prompt_func(data):
-    text = data["text"]
-    image = data["image"]
 
     image_part = {
         "type": "image_url",
