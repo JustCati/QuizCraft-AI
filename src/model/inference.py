@@ -41,8 +41,7 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-async def index_files(files_text):
-    global embed_model
+async def index_files(files_text, embed_model):
     vector_store = get_empty_vector_store(embed_model)
     for text in files_text:
         docs = get_semantic_doc(text, embed_model)
