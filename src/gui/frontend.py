@@ -17,11 +17,11 @@ from src.model.inference import extract_file, index_files, summarize
 async def main():
     embed_model = HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1").model
     vector_store = get_empty_vector_store(embed_model)
-    
-    await cl.Message(content="Send a file!").send()
-    
+
     cl.user_session.set("embed_model", embed_model)
     cl.user_session.set("vector_store", vector_store)
+    await cl.Message(content="Send a file!").send()
+
 
 
 @cl.on_message
