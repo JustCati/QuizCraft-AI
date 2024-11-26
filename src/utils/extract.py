@@ -1,4 +1,5 @@
 import os
+import torch
 import tempfile
 import subprocess
 
@@ -17,6 +18,7 @@ def extract_text(file, batch_multiplier=2):
 
         process = subprocess.run(["marker_single", "--batch_multiplier", str(batch_multiplier), file, dir], stdout=subprocess.PIPE)
         outFolder = process.stdout.decode("utf-8").strip().split(" ")[-2]
+        torch.cuda.empty_cache()
 
         path = os.path.join(dir, outFolder)
         for file in os.listdir(path):
