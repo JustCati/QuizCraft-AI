@@ -45,9 +45,14 @@ async def main():
             Select(
                 id="Model",
                 label="Gwen2.5 Model",
-                values=["qwen2.5:7b", "qwen2.5:32b"],
+                values=["qwen2.5:32b", "qwen2.5:7b"],
                 initial_index=0,
-                initial="qwen2.5:32b",
+            ),
+            Select(
+                id="Role",
+                label="Role",
+                values=["Explain/Summarize", "Questionnaire"],
+                initial_index=0,
             ),
             Switch(id="Streaming", label="Stream Tokens", initial=True),
             Slider(
