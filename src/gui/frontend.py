@@ -110,4 +110,8 @@ async def main(message: cl.Message):
         await cl.make_async(vector_store.index_files)(total_text)
 
     answer = await cl.make_async(summarize)(llm, message.content, vector_store)
-    await cl.Message(content=answer).send()
+
+    msg = cl.Message(content="")
+    for token in answer:
+        await msg.stream_token(token)
+    await msg.send()
