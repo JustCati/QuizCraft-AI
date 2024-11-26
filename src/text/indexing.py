@@ -24,10 +24,10 @@ class VectorStore():
         docs = self.splitter.split_documents(docs)
         return docs
 
-    async def index_files(self, texts):
+    def index_files(self, texts):
         for text in texts:
             docs = self.__get_semantic_doc(text)
-            await self.vector_store.aadd_documents(docs)
+            self.vector_store.add_documents(docs)
 
     def get_retriever(self):
         return self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 6})
