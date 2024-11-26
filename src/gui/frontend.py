@@ -13,10 +13,29 @@ from src.utils.extract import extract_text
 from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
 
 
+
+
 @cl.on_settings_update
 async def setup_agent(settings):
     llm = OllamaLanguageModel(settings["Model"], settings["Temperature"]).get()
     cl.user_session.set("llm", llm)
+
+    if settings["Role"] == "Explain/Summarize":
+        cl.user_session.set(
+            "message_history", 
+            [{
+                "role": "system",
+                "content": "You are a professor that will answer and explain the requested argument to a student."
+            }]
+        )
+    else:
+        cl.user_session.set(
+            "message_history", 
+            [{
+                "role": "system",
+                "content": "You are a professor that will create a questionnaire based on the requested argument."
+            }]
+        )
 
 
 @cl.on_chat_start
@@ -77,6 +96,9 @@ async def cleanup():
 async def main(message: cl.Message):
     llm: OllamaLanguageModel = cl.user_session.get("llm")
     vector_store: VectorStore = cl.user_session.get("vector_store")
+
+    message_history = cl.user_session.get("message_history")
+    message_history.append({"role": "user", "content": message.content})
 
     if len(message.elements) > 0:
         total_text = []
