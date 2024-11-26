@@ -4,7 +4,7 @@ from langchain_experimental.text_splitter import SemanticChunker
 
 
 
-class VectorState():
+class VectorStore():
     def __init__(self, embed_model):
         self.embed_model = embed_model
         self.vector_store = Chroma(
@@ -20,8 +20,8 @@ class VectorState():
         return docs
 
 
-    async def index_files(self, files_text):
-        for text in files_text:
+    async def index_files(self, texts):
+        for text in texts:
             docs = self.__get_semantic_doc(text)
             await self.vector_store.aadd_documents(docs)
 
