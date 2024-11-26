@@ -1,42 +1,91 @@
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-import os.path as osp
+import torch
 import chainlit as cl
+from chainlit.input_widget import Select, Switch, Slider
 
-from src.text.indexing import get_empty_vector_store
-from src.model.model import HuggingFaceEmbeddingModel
-from src.model.inference import extract_file, index_files, summarize
+from src.model.inference import summarize
+from src.text.indexing import VectorStore
+from src.utils.extract import extract_text
+from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
 
 
-
+@cl.on_settings_update
+async def setup_agent(settings):
+    llm = OllamaLanguageModel(settings["Model"], settings["Temperature"]).get()
+    cl.user_session.set("llm", llm)
 
 
 @cl.on_chat_start
 async def main():
-    embed_model = HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1").model
-    vector_store = get_empty_vector_store(embed_model)
+    settings = await cl.ChatSettings(
+        [
+            Select(
+                id="Model",
+                label="Gwen2.5 Model",
+                values=["qwen2.5:7b", "qwen2.5:32b"],
+                initial_index=0,
+                initial="qwen2.5:32b",
+            ),
+            Switch(id="Streaming", label="Stream Tokens", initial=True),
+            Slider(
+                id="Temperature",
+                label="Temperature",
+                initial=0,
+                min=0,
+                max=1,
+                step=0.1,
+            ),
+        ]
+    ).send()
 
-    cl.user_session.set("embed_model", embed_model)
+    embed_model = HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1").model
+    vector_store = VectorStore(embed_model)
     cl.user_session.set("vector_store", vector_store)
-    await cl.Message(content="Send a file!").send()
+
+    uploaded = None
+    while uploaded == None:
+         uploaded = await cl.AskFileMessage(
+            content="Please upload a text file to begin!", 
+            accept=["application/pdf", "image/png", "image/jpg"],
+            max_files=20,
+            max_size_mb=20
+        ).send()
+
+    texts = []
+    with ThreadPoolExecutor(max_workers = 2) as executor:
+        extracted = executor.map(extract_text, [file.path for file in uploaded], [1]*len(uploaded))
+        for text in extracted:
+            texts.extend(text)
+    await cl.make_async(vector_store.index_files)(texts)
+    await setup_agent(settings)
+
+
+
+@cl.on_chat_end
+async def cleanup():
+    llm: OllamaLanguageModel = cl.user_session.get("llm")
+    llm.stop()
+    torch.cuda.empty_cache()
 
 
 
 @cl.on_message
 async def main(message: cl.Message):
-    embed_model = cl.user_session.get("embed_model")
-    vector_store = cl.user_session.get("vector_store")
+    llm: OllamaLanguageModel = cl.user_session.get("llm")
+    vector_store: VectorStore = cl.user_session.get("vector_store")
 
     if len(message.elements) > 0:
         total_text = []
         for element in message.elements:
             file_path = element.path
-            text = await cl.make_async(extract_file)(file_path, 10)
+            text = await cl.make_async(extract_text)(file_path, 10)
             total_text.extend(text)
         total_text = total_text[0]
-        await cl.make_async(index_files)(total_text, embed_model)
+        await cl.make_async(vector_store.index_files)(total_text)
 
-    answer = await cl.make_async(summarize)(message.content, vector_store)
+    answer = await cl.make_async(summarize)(llm, message.content, vector_store)
     await cl.Message(content=answer).send()
