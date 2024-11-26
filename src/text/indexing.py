@@ -4,20 +4,27 @@ from langchain_experimental.text_splitter import SemanticChunker
 
 
 
-def get_semantic_doc(text, embeddings_model):
-    splitter = SemanticChunker(embeddings=embeddings_model, breakpoint_threshold_type="percentile")
-    docs = splitter.create_documents(text)
-    docs = splitter.split_documents(docs)
-    return docs
+class VectorState():
+    def __init__(self, embed_model):
+        self.embed_model = embed_model
+        self.vector_store = Chroma(
+                    collection_name = "documents",
+                    embedding_function = self.embed_model
+                )
+        self.splitter = SemanticChunker(embeddings=self.embed_model, breakpoint_threshold_type="percentile")
 
 
-def get_empty_vector_store(embeddings_model):
-    vector_store = Chroma(
-        collection_name="vector_store",
-        embedding_function=embeddings_model
-    )
-    return vector_store
+    def __get_semantic_doc(self, text):
+        docs = self.splitter.create_documents(text)
+        docs = self.splitter.split_documents(docs)
+        return docs
 
 
-def get_retriever(vector_store: Chroma):
-    return vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 6})
+    async def index_files(self, files_text):
+        for text in files_text:
+            docs = self.__get_semantic_doc(text)
+            await self.vector_store.aadd_documents(docs)
+
+
+    def get_retriever(self):
+        return self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 6})
