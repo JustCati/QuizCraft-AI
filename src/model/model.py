@@ -46,14 +46,6 @@ class OllamaLanguageModel(GenericOllamaModel):
                         num_predict=num_predict)
 
 
-
-class OllamaEmbeddingModel(GenericOllamaModel):
-    def __init__(self, model_name):
-        super().__init__(model_name)
-        super().check_model()
-        self.model = OllamaEmbeddings(model=model_name)
-
-
 # mixedbread-ai/mxbai-embed-large-v1
 class HuggingFaceEmbeddingModel():
     def __init__(self, model_name):
