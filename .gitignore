@@ -251,3 +251,4 @@ huggingface_models/*
 .chainlit/*
 .files/*
 chainlit.md
+src/postgres/.example_env
