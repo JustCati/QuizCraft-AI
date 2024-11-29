@@ -66,7 +66,7 @@ async def cleanup():
     llm.stop()
     torch.cuda.empty_cache()
 
-async def send_message(message: cl.Message, text):
+async def send_message(text):
         stream = cl.user_session.get("stream_tokens")
         if stream:
             msg = cl.Message(content="")
@@ -95,4 +95,4 @@ async def main(message: cl.Message):
         await cl.make_async(vector_store.index_files)(total_text)
 
     answer = await cl.make_async(summarize)(llm, message.content, vector_store)
-    await send_message(message, answer)
+    await send_message(answer)
