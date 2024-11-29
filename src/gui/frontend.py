@@ -40,13 +40,34 @@ async def setup_agent(settings):
 
 @cl.on_chat_start
 async def main():
+    MODELS = [
+        {
+            "qwen2.5:7b": {
+                "model": "qwen2.5:7b",
+                "memory": 6.5e9 / 1024**3,
+                }
+            },
+        {
+            "qwen2.5:32b": {
+                "model": "qwen2.5:32b",
+                "memory": 22.5e9 / 1024**3,
+                }
+            }
+    ]
+    available_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
+
+    sorted_models = sorted(MODELS, key=lambda x: list(x.values())[0]['memory'], reverse=True)
+    best = [model for model in sorted_models if list(model.values())[0]['memory'] <= available_memory][0]
+    best_index = MODELS.index(best)
+
+
     settings = await cl.ChatSettings(
         [
             Select(
                 id="Model",
                 label="Gwen2.5 Model",
-                values=["qwen2.5:32b", "qwen2.5:7b"],
-                initial_index=0,
+                values=[list(model.keys())[0] for model in MODELS],
+                initial_index=best_index,
             ),
             Select(
                 id="Role",
