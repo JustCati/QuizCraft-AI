@@ -2,10 +2,20 @@ import os
 import torch
 import tempfile
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 from src.utils.pdf2img2pdf import convert_img2pdf
 
 
+
+
+def batch_extract(files):
+    texts = []
+    with ThreadPoolExecutor(max_workers = 2) as executor:
+        extracted = executor.map(extract_text, [file.path for file in files], [1]*len(files))
+        for text in extracted:
+            texts.extend(text)
+    return texts
 
 
 def extract_text(file, batch_multiplier=2):

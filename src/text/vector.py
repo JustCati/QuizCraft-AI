@@ -28,6 +28,7 @@ class VectorStore():
         for text in texts:
             docs = self.__get_semantic_doc(text)
             self.vector_store.add_documents(docs)
+        print("Files indexed.")
 
     def get_retriever(self):
         return self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 6})
