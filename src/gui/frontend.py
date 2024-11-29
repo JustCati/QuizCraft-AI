@@ -25,13 +25,8 @@ async def setup_agent(settings):
     else:
         final = "create a questionnaire based on the requested argument."
     
-    cl.user_session.set(
-        "message_history", 
-        [{
-            "role": "system",
-            "content": f"You are a professor that will {final}"
-        }]
-    )
+
+    set_role(settings)
 
     stream_tokens = settings["Streaming"]
     cl.user_session.set("stream_tokens", stream_tokens)

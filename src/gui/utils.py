@@ -3,6 +3,21 @@ import torch
 import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
+def set_role(settings):
+    if settings["Role"] == "Explain/Summarize":
+        final = "answer and explain the requested argument to a student."
+    else:
+        final = "create a questionnaire based on the requested argument."
+    
+    cl.user_session.set(
+        "message_history", 
+        [{
+            "role": "system",
+            "content": f"You are a professor that will {final}"
+        }]
+    )
+
+
 
 def get_models():
     MODELS = [
