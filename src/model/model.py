@@ -49,11 +49,10 @@ class GenericOllamaModel(object):
         self.__manage_Model("stop")
 
     def __enter__(self):
-        self.__manage_Model("run")
-        return self.model
+        self.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.__manage_Model("stop")
+        self.stop()
 
 
 
