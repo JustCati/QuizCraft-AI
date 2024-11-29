@@ -33,6 +33,9 @@ async def setup_agent(settings):
         }]
     )
 
+    stream_tokens = settings["Streaming"]
+    cl.user_session.set("stream_tokens", stream_tokens)
+
 
 @cl.on_chat_start
 async def main():
@@ -63,6 +66,15 @@ async def cleanup():
     llm.stop()
     torch.cuda.empty_cache()
 
+async def send_message(message: cl.Message, text):
+        stream = cl.user_session.get("stream_tokens")
+        if stream:
+            msg = cl.Message(content="")
+            for token in text:
+                await msg.stream_token(token)
+        else:
+            msg = cl.Message(content=text)
+        await msg.send()
 
 
 @cl.on_message
@@ -83,8 +95,4 @@ async def main(message: cl.Message):
         await cl.make_async(vector_store.index_files)(total_text)
 
     answer = await cl.make_async(summarize)(llm, message.content, vector_store)
-
-    msg = cl.Message(content="")
-    for token in answer:
-        await msg.stream_token(token)
-    await msg.send()
+    await send_message(message, answer)
