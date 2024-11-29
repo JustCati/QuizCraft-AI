@@ -1,0 +1,65 @@
+import torch
+
+import chainlit as cl
+from chainlit.input_widget import Select, Switch, Slider
+
+
+def get_models():
+    MODELS = [
+            {
+                "qwen2.5:7b": {
+                    "model": "qwen2.5:7b",
+                    "memory": 6.5e9 / 1024**3,
+                    }
+                },
+            {
+                "qwen2.5:32b": {
+                    "model": "qwen2.5:32b",
+                    "memory": 22.5e9 / 1024**3,
+                    }
+                }
+        ]
+    return MODELS
+
+
+def get_list_models():
+    return [list(model.keys())[0] for model in get_models()]
+
+
+def get_best_model():
+    MODELS = get_models()
+    available_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
+
+    sorted_models = sorted(MODELS, key=lambda x: list(x.values())[0]['memory'], reverse=True)
+    best = [model for model in sorted_models if list(model.values())[0]['memory'] <= available_memory][0]
+    best_index = MODELS.index(best)
+    return best_index
+
+
+async def create_settings():
+    settings = await cl.ChatSettings(
+        [
+            Select(
+                id="Model",
+                label="Gwen2.5 Model",
+                values=get_list_models(),
+                initial_index=get_best_model(),
+            ),
+            Select(
+                id="Role",
+                label="Role",
+                values=["Explain/Summarize", "Questionnaire"],
+                initial_index=0,
+            ),
+            Switch(id="Streaming", label="Stream Tokens", initial=True),
+            Slider(
+                id="Temperature",
+                label="Temperature",
+                initial=0,
+                min=0,
+                max=1,
+                step=0.1,
+            ),
+        ]
+    ).send()
+    return settings

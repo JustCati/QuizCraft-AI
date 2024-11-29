@@ -36,56 +36,7 @@ async def setup_agent(settings):
 
 @cl.on_chat_start
 async def main():
-    MODELS = [
-        {
-            "qwen2.5:7b": {
-                "model": "qwen2.5:7b",
-                "memory": 6.5e9 / 1024**3,
-                }
-            },
-        {
-            "qwen2.5:32b": {
-                "model": "qwen2.5:32b",
-                "memory": 22.5e9 / 1024**3,
-                }
-            }
-    ]
-    available_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
-
-    sorted_models = sorted(MODELS, key=lambda x: list(x.values())[0]['memory'], reverse=True)
-    best = [model for model in sorted_models if list(model.values())[0]['memory'] <= available_memory][0]
-    best_index = MODELS.index(best)
-
-
-    settings = await cl.ChatSettings(
-        [
-            Select(
-                id="Model",
-                label="Gwen2.5 Model",
-                values=[list(model.keys())[0] for model in MODELS],
-                initial_index=best_index,
-            ),
-            Select(
-                id="Role",
-                label="Role",
-                values=["Explain/Summarize", "Questionnaire"],
-                initial_index=0,
-            ),
-            Switch(id="Streaming", label="Stream Tokens", initial=True),
-            Slider(
-                id="Temperature",
-                label="Temperature",
-                initial=0,
-                min=0,
-                max=1,
-                step=0.1,
-            ),
-        ]
-    ).send()
-
-    embed_model = HuggingFaceEmbeddingModel("mixedbread-ai/mxbai-embed-large-v1").model
-    vector_store = VectorStore(embed_model)
-    cl.user_session.set("vector_store", vector_store)
+    settings = await create_settings()
 
     uploaded = None
     while uploaded == None:
