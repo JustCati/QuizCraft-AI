@@ -21,21 +21,17 @@ async def setup_agent(settings):
     cl.user_session.set("llm", llm)
 
     if settings["Role"] == "Explain/Summarize":
-        cl.user_session.set(
-            "message_history", 
-            [{
-                "role": "system",
-                "content": "You are a professor that will answer and explain the requested argument to a student."
-            }]
-        )
+        final = "answer and explain the requested argument to a student."
     else:
-        cl.user_session.set(
-            "message_history", 
-            [{
-                "role": "system",
-                "content": "You are a professor that will create a questionnaire based on the requested argument."
-            }]
-        )
+        final = "create a questionnaire based on the requested argument."
+    
+    cl.user_session.set(
+        "message_history", 
+        [{
+            "role": "system",
+            "content": f"You are a professor that will {final}"
+        }]
+    )
 
 
 @cl.on_chat_start
