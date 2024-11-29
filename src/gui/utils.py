@@ -3,6 +3,12 @@ import torch
 import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
+from src.text.vector import VectorStore
+from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
+
+
+
+
 def set_role(settings):
     if settings["Role"] == "Explain/Summarize":
         final = "answer and explain the requested argument to a student."
@@ -17,6 +23,24 @@ def set_role(settings):
         }]
     )
 
+
+
+async def create_vector_store():
+    embed_model = cl.user_session.get("embed_model")
+    if embed_model is None:
+        embed_model = await cl.make_async(load_embed)("mixedbread-ai/mxbai-embed-large-v1")
+        cl.user_session.set("embed_model", embed_model)
+    vector_store = VectorStore(embed_model)
+    print("Vector store created.")
+    return vector_store
+
+
+def load_embed(model_name):
+    return HuggingFaceEmbeddingModel(model_name).model
+
+
+def load_llm(model_name, temperature):
+    return OllamaLanguageModel(model_name, temperature).get()
 
 
 def get_models():

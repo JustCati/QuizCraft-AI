@@ -5,36 +5,57 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import torch
 import chainlit as cl
-from chainlit.input_widget import Select, Switch, Slider
 
+from src.text.vector import VectorStore
 from src.model.inference import summarize
-from src.text.indexing import VectorStore
 from src.utils.extract import extract_text
-from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
+from src.model.model import OllamaLanguageModel
+from src.gui.utils import create_settings, create_vector_store, set_role, load_llm
+
+
 
 
 
 
 @cl.on_settings_update
 async def setup_agent(settings):
-    llm = OllamaLanguageModel(settings["Model"], settings["Temperature"]).get()
-    cl.user_session.set("llm", llm)
+    model_name = cl.user_session.get("model_name")
+    if model_name is None:
+        model_name = settings["Model"]
+        cl.user_session.set("model_name", model_name)
 
-    if settings["Role"] == "Explain/Summarize":
-        final = "answer and explain the requested argument to a student."
-    else:
-        final = "create a questionnaire based on the requested argument."
-    
+        llm = await cl.make_async(load_llm)(settings["Model"], settings["Temperature"])
+        cl.user_session.set("llm", llm)
+
+    elif model_name != settings["Model"]:
+        cleanup()
+        model_name = settings["Model"]
+        cl.user_session.set("model_name", model_name)
+
+        llm = await cl.make_async(load_llm)(settings["Model"], settings["Temperature"])
+        cl.user_session.set("llm", llm)
 
     set_role(settings)
 
     stream_tokens = settings["Streaming"]
     cl.user_session.set("stream_tokens", stream_tokens)
+    print("Agent setup complete.")
+
+
+@cl.on_chat_end
+def cleanup():
+    llm: OllamaLanguageModel = cl.user_session.get("llm")
+    print(llm)
+    llm.stop()
+    print("Agent cleanup complete.")
 
 
 @cl.on_chat_start
 async def main():
     settings = await create_settings()
+
+    vector_store: VectorStore = await create_vector_store()
+    cl.user_session.set("vector_store", vector_store)
 
     uploaded = None
     while uploaded == None:
@@ -55,13 +76,9 @@ async def main():
 
 
 
-@cl.on_chat_end
-async def cleanup():
-    llm: OllamaLanguageModel = cl.user_session.get("llm")
-    llm.stop()
-    torch.cuda.empty_cache()
-
-async def send_message(text):
+@cl.on_message
+async def main(message: cl.Message):
+    async def send_message(text):
         stream = cl.user_session.get("stream_tokens")
         if stream:
             msg = cl.Message(content="")
@@ -72,12 +89,10 @@ async def send_message(text):
         await msg.send()
 
 
-@cl.on_message
-async def main(message: cl.Message):
     llm: OllamaLanguageModel = cl.user_session.get("llm")
     vector_store: VectorStore = cl.user_session.get("vector_store")
 
-    message_history = cl.user_session.get("message_history")
+    message_history: list = cl.user_session.get("message_history")
     message_history.append({"role": "user", "content": message.content})
 
     if len(message.elements) > 0:
