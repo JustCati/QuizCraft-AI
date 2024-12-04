@@ -9,7 +9,7 @@ from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
 
 
 
-def set_role(settings):
+def set_role(settings: dict[str, str]) -> None:
     if settings["Role"] == "Explain/Summarize":
         final = "answer and explain the requested argument to a student."
     else:
@@ -25,7 +25,7 @@ def set_role(settings):
 
 
 
-async def create_vector_store():
+async def create_vector_store() -> VectorStore:
     embed_model = cl.user_session.get("embed_model")
     if embed_model is None:
         embed_model = await cl.make_async(load_embed)("mixedbread-ai/mxbai-embed-large-v1")
@@ -35,15 +35,15 @@ async def create_vector_store():
     return vector_store
 
 
-def load_embed(model_name):
+def load_embed(model_name: str) -> HuggingFaceEmbeddingModel:
     return HuggingFaceEmbeddingModel(model_name).model
 
 
-def load_llm(model_name, temperature):
+def load_llm(model_name: str, temperature: float) -> OllamaLanguageModel:
     return OllamaLanguageModel(model_name, temperature).get()
 
 
-def get_models():
+def get_models() -> list[dict[str, dict[str, str]]]:
     MODELS = [
             {
                 "qwen2.5:7b": {
@@ -61,11 +61,11 @@ def get_models():
     return MODELS
 
 
-def get_list_models():
+def get_list_models() -> list[str]:
     return [list(model.keys())[0] for model in get_models()]
 
 
-def get_best_model():
+def get_best_model() -> int:
     MODELS = get_models()
     available_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
 
@@ -75,7 +75,7 @@ def get_best_model():
     return best_index
 
 
-async def create_settings():
+async def create_settings() -> dict[str, str]:
     settings = await cl.ChatSettings(
         [
             Select(
