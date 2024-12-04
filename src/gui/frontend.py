@@ -12,7 +12,8 @@ from src.gui.utils import create_settings, create_vector_store, set_role, load_l
 
 
 
-async def send_message(text):
+
+async def send_message(text: str) -> None:
     stream = cl.user_session.get("stream_tokens")
     if stream:
         msg = cl.Message(content="")
@@ -24,7 +25,7 @@ async def send_message(text):
 
 
 @cl.on_settings_update
-async def setup_agent(settings):
+async def setup_agent(settings: dict[str, str]):
     model_name = cl.user_session.get("model_name")
     if model_name is None:
         model_name = settings["Model"]
