@@ -2,9 +2,10 @@ import os
 import dotenv
 import time
 
-import psycopg2 as pg
+import psycopg as pg
+from psycopg.cursor import Cursor
+from psycopg.connection import Connection
 from python_on_whales import DockerClient
-from psycopg2.extensions import connection, cursor
 
 
 
@@ -15,21 +16,22 @@ class Postgres:
         self.conn, self.cursor = self.__connect()
 
      
-    def __connect(self) -> tuple[connection, cursor]:
+    def __connect(self) -> tuple[Connection, Cursor]:
         self.__manage_istance("launch")
-        time.sleep(5)
 
         if not self.env["POSTGRES_DB"] or not self.env["POSTGRES_USER"] or not self.env["POSTGRES_PASSWORD"]:
             self.__manage_istance("stop")
             raise ValueError("Database environment variables are not set")
 
-        conn: connection = pg.connect(
-            database = self.env.pop("POSTGRES_DB", ""),
-            user = self.env.pop("POSTGRES_USER", ""),
-            password = self.env.pop("POSTGRES_PASSWORD", ""),
-            host = self.env.pop("POSTGRES_HOST", "localhost"),
-            port = self.env.pop("POSTGRES_PORT", "5432"),
-        )
+        conn: Connection = pg.connect(
+            "dbname='{}' user='{}' password='{}' host='{}' port='{}'".format(
+                self.env["POSTGRES_DB"],
+                self.env["POSTGRES_USER"],
+                self.env["POSTGRES_PASSWORD"],
+                self.env.get("POSTGRES_HOST", "localhost"),
+                self.env.get("POSTGRES_PORT", "5432"),
+            ))
+        print("connected successfully")
         cursor = conn.cursor()
         return conn, cursor
 
