@@ -48,9 +48,10 @@ async def setup_agent(settings):
 
 @cl.on_chat_end
 def cleanup():
-    llm: OllamaLanguageModel = cl.user_session.get("llm")   #! Doesn't work. For some reason, user_session gets
-    llm.stop()                                              #! deleted before cleanup is called.
-    print("Agent cleanup complete.")
+    llm = cl.user_session.get("llm")
+    if llm is not None:
+        llm.stop()
+        print("Agent cleanup complete.")
 
 
 @cl.on_chat_start
