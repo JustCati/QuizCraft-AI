@@ -5,6 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.text.vector import VectorStore
 from src.model.inference import summarize
+from src.postgres.postgres import Postgres
 from src.utils.extract import batch_extract
 from src.model.model import OllamaLanguageModel
 from src.gui.utils import create_settings, create_vector_store, set_role, load_llm
@@ -49,10 +50,17 @@ async def setup_agent(settings: dict[str, str]):
 
 @cl.on_chat_end
 def cleanup():
+    # Clean up the language model
     llm = cl.user_session.get("llm")
     if llm is not None:
         llm.stop()
         print("Agent cleanup complete.")
+
+    # Clean up the database and vector store
+    vector_store: VectorStore = cl.user_session.get("vector_store")
+    if vector_store is not None:
+        vector_store.db.stop()
+        print("Database cleanup complete.")
 
 
 @cl.on_chat_start
@@ -70,11 +78,15 @@ async def main():
         ).send()
     await send_message("Processing files...")
 
-    vector_store: VectorStore = await create_vector_store()
+    env_file = os.path.join(os.path.dirname(__file__), "src", "postgres", ".env")
+    docker_compose = env_file.replace(".env", "docker-compose.yml")
+    db = await cl.make_async(Postgres)(docker_compose, env_file)
+
+    vector_store: VectorStore = await create_vector_store(db)
     cl.user_session.set("vector_store", vector_store)
 
     texts = await cl.make_async(batch_extract)(uploaded)
-    await cl.make_async(vector_store.index_files)(texts)
+    await cl.make_async(vector_store.add)(texts)
     await setup_agent(settings)
 
     await send_message("Agent is ready to chat!")
