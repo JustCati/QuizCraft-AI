@@ -35,4 +35,4 @@ def extract_text(file: str, batch_multiplier=2) -> dict[str, str]:
             if file.endswith(".md"):
                 with open(os.path.join(path, file), "r") as f:
                     text.append(f.read())
-    return text
+    return {"name": os.path.basename(file), "text": text}
