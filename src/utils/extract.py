@@ -9,7 +9,7 @@ from src.utils.pdf2img2pdf import convert_img2pdf
 
 
 
-def batch_extract(files):
+def batch_extract(files: list[str]) -> list[dict[str, str]]:
     texts = []
     with ThreadPoolExecutor(max_workers = 2) as executor:
         extracted = executor.map(extract_text, [file.path for file in files], [1]*len(files))
@@ -18,7 +18,7 @@ def batch_extract(files):
     return texts
 
 
-def extract_text(file, batch_multiplier=2):
+def extract_text(file: str, batch_multiplier=2) -> dict[str, str]:
     text = []
     with tempfile.TemporaryDirectory() as dir:
         if file.endswith(".png") or file.endswith(".jpg"):
