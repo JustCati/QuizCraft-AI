@@ -31,7 +31,7 @@ class Postgres:
                 self.env.get("POSTGRES_HOST", "localhost"),
                 self.env.get("POSTGRES_PORT", "5432"),
             ))
-        print("connected successfully")
+        print("Connected to PostgresSQL DB successfully")
         cursor = conn.cursor()
         return conn, cursor
 
@@ -51,9 +51,7 @@ class Postgres:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        self.cursor.close()
-        self.conn.close()
-        self.__manage_istance("stop")
+        self.stop()
 
 
     def __manage_istance(self, action: str) -> None:
@@ -79,15 +77,17 @@ class Postgres:
 
 
     def stop(self):
+        self.cursor.close()
+        self.conn.close()
         self.__manage_istance("stop")
 
 
     def does_file_exist(self, file_id: str) -> bool:
-        self.cursor.execute("SELECT filename FROM document WHERE id = %s", (file_id,))
+        self.cursor.execute("SELECT id FROM document WHERE id = %s", (file_id,))
         result = self.cursor.fetchone()
         return result is not None
 
 
-    def save_file_to_db(self, file_id: str, file_name: str) -> None:
-        self.cursor.execute("INSERT INTO document (id, filename) VALUES (%s, %s)", (file_id, file_name))
+    def save_file_to_db(self, file_id: str) -> None:
+        self.cursor.execute("INSERT INTO document (id) VALUES (%s)", (file_id,))
         self.conn.commit()
