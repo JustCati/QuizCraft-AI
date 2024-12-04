@@ -9,7 +9,7 @@ from src.utils.pdf2img2pdf import convert_img2pdf
 
 
 
-def batch_extract(files: list[str]) -> list[dict[str, str]]:
+def batch_extract(files: list[str]) -> list[str]:
     texts = []
     with ThreadPoolExecutor(max_workers = 2) as executor:
         extracted = executor.map(extract_text, [file.path for file in files], [1]*len(files))
@@ -18,7 +18,7 @@ def batch_extract(files: list[str]) -> list[dict[str, str]]:
     return texts
 
 
-def extract_text(file: str, batch_multiplier=2) -> dict[str, str]:
+def extract_text(file: str, batch_multiplier=2) -> list[str]:
     text = []
     with tempfile.TemporaryDirectory() as dir:
         if file.endswith(".png") or file.endswith(".jpg"):
@@ -35,4 +35,4 @@ def extract_text(file: str, batch_multiplier=2) -> dict[str, str]:
             if file.endswith(".md"):
                 with open(os.path.join(path, file), "r") as f:
                     text.append(f.read())
-    return {"name": os.path.basename(file), "text": text}
+    return text
