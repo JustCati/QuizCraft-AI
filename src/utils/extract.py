@@ -1,7 +1,5 @@
-import os
-import torch
-import tempfile
-import subprocess
+import multiprocessing
+from markitdown import MarkItDown
 from concurrent.futures import ThreadPoolExecutor
 
 from src.utils.pdf2img2pdf import convert_img2pdf
@@ -11,28 +9,24 @@ from src.utils.pdf2img2pdf import convert_img2pdf
 
 def batch_extract(files: list[str]) -> list[str]:
     texts = []
-    with ThreadPoolExecutor(max_workers = 2) as executor:
-        extracted = executor.map(extract_text, [file.path for file in files], [1]*len(files))
+    worker_count = min(multiprocessing.cpu_count(), len(files))
+    with ThreadPoolExecutor(max_workers = worker_count) as executor:
+        extracted = executor.map(extract_text, [file.path for file in files])
         for text in extracted:
             texts.extend(text)
     return texts
 
 
-def extract_text(file: str, batch_multiplier=2) -> list[str]:
-    text = []
-    with tempfile.TemporaryDirectory() as dir:
-        if file.endswith(".png") or file.endswith(".jpg"):
-            images = [file]
-            pdf_path = convert_img2pdf(images, os.path.join(dir, "temp.pdf"))
-            file = pdf_path
+def extract_text(file: str) -> list[str]:
+    if not file.endswith(".pdf"):
+        print(file)
+        file_extension = file.split(".")[-1]
+        print(file_extension)
+        convert_img2pdf(file, file.replace(file_extension, ".pdf"))
+        file = file.replace(file_extension, ".pdf")
 
-        process = subprocess.run(["marker_single", "--batch_multiplier", str(batch_multiplier), file, dir], stdout=subprocess.PIPE)
-        outFolder = process.stdout.decode("utf-8").strip().split(" ")[-2]
-        torch.cuda.empty_cache()
-
-        path = os.path.join(dir, outFolder)
-        for file in os.listdir(path):
-            if file.endswith(".md"):
-                with open(os.path.join(path, file), "r") as f:
-                    text.append(f.read())
-    return text
+    md = MarkItDown(enable_plugins=True)
+    results = md.convert(file)
+    with open("temp.md", "w") as f:
+        f.write(results.text_content)
+    return results.text_content
