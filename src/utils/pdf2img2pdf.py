@@ -15,6 +15,8 @@ def convert_pdf2img(pdf_file_path):
 
 
 def convert_img2pdf(path, output_file_path):
+    if isinstance(path, str):
+        path = [path]
     for img in path:
         image = Image.open(img)
         image.save(output_file_path, "PDF", resolution=100.0, save_all=True, append_images=[image])
