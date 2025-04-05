@@ -57,6 +57,12 @@ def get_models() -> list[dict[str, dict[str, str]]]:
                     "model": "qwen2.5:32b",
                     "memory": 22.5e9 / 1024**3,
                     }
+                },
+            {
+                "qwq:32b": {
+                    "model": "qwq:32b",
+                    "memory": 22.5e9 / 1024**3,
+                    }
                 }
         ]
     return MODELS
@@ -81,7 +87,7 @@ async def create_settings() -> dict[str, str]:
         [
             Select(
                 id="Model",
-                label="Gwen2.5 Model",
+                label="QwQ Model",
                 values=get_list_models(),
                 initial_index=get_best_model(),
             ),
