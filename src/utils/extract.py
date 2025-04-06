@@ -12,12 +12,11 @@ def batch_extract(files: list[str]) -> list[str]:
     worker_count = min(multiprocessing.cpu_count(), len(files))
     with ThreadPoolExecutor(max_workers = worker_count) as executor:
         extracted = executor.map(extract_text, [file.path for file in files])
-        for text in extracted:
-            texts.extend(text)
+        texts.extend(extracted)
     return texts
 
 
-def extract_text(file: str) -> list[str]:
+def extract_text(file: str) -> str:
     if not file.endswith(".pdf"):
         print(file)
         file_extension = file.split(".")[-1]
@@ -27,6 +26,4 @@ def extract_text(file: str) -> list[str]:
 
     md = MarkItDown(enable_plugins=True)
     results = md.convert(file)
-    with open("temp.md", "w") as f:
-        f.write(results.text_content)
     return results.text_content
