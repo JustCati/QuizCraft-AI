@@ -53,17 +53,17 @@ def get_models() -> list[dict[str, dict[str, str]]]:
                     }
                 },
             {
-                "qwen2.5:32b": {
-                    "model": "qwen2.5:32b",
-                    "memory": 22.5e9 / 1024**3,
-                    }
-                },
-            {
-                "qwq:32b": {
-                    "model": "qwq:32b",
+                "gemma3:27b": {
+                    "model": "gemma3:27b",
                     "memory": 22.5e9 / 1024**3,
                     }
                 }
+            # {
+            #     "qwen2.5:32b": {
+            #         "model": "qwen2.5:32b",
+            #         "memory": 22.5e9 / 1024**3,
+            #         }
+            #     },
         ]
     return MODELS
 
