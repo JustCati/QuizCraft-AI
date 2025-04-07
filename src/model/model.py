@@ -57,7 +57,7 @@ class GenericOllamaModel(object):
 
 
 class OllamaLanguageModel(GenericOllamaModel):
-    def __init__(self, model_name: str, temperature: float = 0.0, num_predict: int = 512) -> None:
+    def __init__(self, model_name: str, temperature: float = 0.0, num_predict: int = -1) -> None:
         super().__init__(model_name)
         super().check_model()
         self.model = ChatOllama(model=model_name, 
