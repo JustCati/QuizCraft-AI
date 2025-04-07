@@ -8,7 +8,7 @@ from src.text.vector import VectorStore
 from src.model.cleaning import clean_text
 from src.model.inference import summarize
 from src.postgres.postgres import Postgres
-from src.utils.extract import batch_extract
+from src.utils.extract import extract_text
 from src.model.model import OllamaLanguageModel
 from src.gui.utils import create_settings, create_vector_store, set_role, load_llm
 
@@ -91,9 +91,7 @@ async def main():
         ).send()
     await send_message("Processing files...")
 
-    extracted_texts = await cl.make_async(batch_extract)(uploaded)
-    cleaned_texts = await cl.make_async(clean)(extracted_texts)
-    text = await cl.make_async(clean_text)(cl.user_session.get("llm"), cleaned_texts)
+    text = await cl.make_async(extract_text)(cl.user_session.get("llm"), uploaded)
 
     await cl.make_async(vector_store.add)(text)
     await send_message("Agent is ready to chat!")
@@ -108,7 +106,7 @@ async def main(message: cl.Message):
     message_history.append({"role": "user", "content": message.content})
 
     if len(message.elements) > 0:
-        total_text = await cl.make_async(batch_extract)(message.elements)
+        total_text = await cl.make_async(extract_text)(cl.user_session.get("llm"), message.elements)
         await cl.make_async(vector_store.add)(total_text)
 
     answer = await cl.make_async(summarize)(llm, message.content, vector_store)
