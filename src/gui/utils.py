@@ -1,3 +1,4 @@
+import asyncio
 import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
@@ -58,6 +59,48 @@ def load_llm(settings):
             except:
                 continue
     return llm
+
+
+
+async def show_update_message(msgs, func_call, *args, **kwargs):   
+    start_msg, ending_msg = msgs  
+   
+    loading_msg, stop_loading = await show_loading_message(start_msg)
+    try:
+        await func_call(*args, **kwargs)
+    finally:
+        stop_loading()
+        loading_msg.content = ending_msg
+        await loading_msg.update()
+
+
+async def show_loading_message(text, interval=0.5):
+    msg = cl.Message(content=text)
+    await msg.send()
+
+    stop_event = asyncio.Event()
+
+    async def animate():
+        dots = ""
+        while not stop_event.is_set():
+            dots = "." if dots == "..." else dots + "."
+            msg.content = f"{text}{dots}"
+            await msg.update()
+            await asyncio.sleep(interval)
+
+    asyncio.create_task(animate())
+    return msg, stop_event.set
+
+
+async def send_message(text: str) -> None:
+    stream = cl.user_session.get("stream_tokens")
+    if stream:
+        msg = cl.Message(content="")
+        for token in text:
+            await msg.stream_token(token)
+    else:
+        msg = cl.Message(content=text)
+    await msg.send()
 
 
 

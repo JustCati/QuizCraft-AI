@@ -3,29 +3,18 @@ import sys
 import chainlit as cl
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
+from src.gui.utils import *
 from src.text.vector import VectorStore
 from src.model.inference import summarize
 from src.postgres.postgres import Postgres
 from src.utils.extract import extract_text
 from src.model.model import OllamaLanguageModel
-from src.gui.utils import create_settings, create_vector_store, set_role, load_llm
 
 import warnings
 warnings.filterwarnings("ignore")
 
 
 
-
-
-async def send_message(text: str) -> None:
-    stream = cl.user_session.get("stream_tokens")
-    if stream:
-        msg = cl.Message(content="")
-        for token in text:
-            await msg.stream_token(token)
-    else:
-        msg = cl.Message(content=text)
-    await msg.send()
 
 
 @cl.on_settings_update
@@ -45,13 +34,13 @@ async def setup_agent(settings):
 
 @cl.on_chat_end
 def cleanup():
-    # Clean up the database and vector store
-    vector_store: VectorStore = cl.user_session.get("vector_store")
-    if vector_store is not None:
-        vector_store.db.stop()
-        print("Database cleanup complete.")
+    #* Clean up the database and vector store
+    # vector_store: VectorStore = cl.user_session.get("vector_store")
+    # if vector_store is not None:
+    #     vector_store.db.stop()
+    #     print("Database cleanup complete.")
 
-    # Clean up the language model
+    #* Clean up the language model
     llm = cl.user_session.get("llm_ref")
     if llm is not None:
         llm.stop()
@@ -62,12 +51,27 @@ def cleanup():
 async def main():
     settings = await create_settings()
 
-    env_file = os.path.join(os.path.dirname(__file__), "src", "postgres", ".env")
-    docker_compose = env_file.replace(".env", "docker-compose.yml")
-    db = await cl.make_async(Postgres)(docker_compose, env_file)
+    async def create_db():
+        env_file = os.path.join(os.path.dirname(__file__), "src", "postgres", ".env")
+        docker_compose = env_file.replace(".env", "docker-compose.yml")
+        db = await cl.make_async(Postgres)(docker_compose, env_file)
+        cl.user_session.set("db", db)
 
-    vector_store: VectorStore = await create_vector_store(db)
-    cl.user_session.set("vector_store", vector_store)
+    await show_update_message(
+            ["Launching postgres", "Database created successfully!"], 
+            create_db
+        )
+
+    async def create_vector_store(db: Postgres):
+        vector_store = await cl.make_async(create_vector_store)(db)
+        cl.user_session.set("vector_store", vector_store)
+
+    await show_update_message(
+            ["Creating vector store", "Vector store created successfully!"], 
+            create_vector_store, 
+            cl.user_session.get("db")
+        )
+
     await setup_agent(settings)
 
     res = await cl.AskActionMessage(
@@ -88,12 +92,19 @@ async def main():
                 max_size_mb=20,
                 timeout=360
             ).send()
-        await send_message("Processing files...")
 
-        llm = cl.user_session.get("llm")
-        extracted_text = await cl.make_async(extract_text)(llm, uploaded)
-        await cl.make_async(vector_store.add)(extracted_text)
-        await send_message("Knowledge base loaded.")
+        async def index_files(llm, uploaded):
+            llm = cl.user_session.get("llm")
+            vector_store: VectorStore = cl.user_session.get("vector_store")
+            extracted_text = await cl.make_async(extract_text)(llm, uploaded)
+            await cl.make_async(vector_store.add)(extracted_text)
+
+        await show_update_message(
+            ["Indexing files", "✅ Files processed successfully!"], 
+            index_files, 
+            cl.user_session.get("llm"), 
+            uploaded
+        )
 
 
 @cl.on_message
