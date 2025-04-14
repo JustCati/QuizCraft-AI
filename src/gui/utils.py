@@ -71,12 +71,6 @@ async def create_settings():
     settings = await cl.ChatSettings(
         [
             Select(
-              id="Modality",
-              label="Modality",
-              values=["Preload Data", "Message"],
-              initial_index=1, 
-            ),
-            Select(
                 id="Model",
                 label="Model",
                 values=MODELS_LIST,

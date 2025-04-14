@@ -79,8 +79,6 @@ async def main():
     ).send()
 
     if res and res.get("payload").get("value") == "preload":
-        cl.user_session.set("modality", res.get("payload").get("value"))
-
         uploaded = None
         while uploaded == None:
              uploaded = await cl.AskFileMessage(
