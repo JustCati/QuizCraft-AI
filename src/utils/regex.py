@@ -3,7 +3,7 @@ import re
 
 
 def remove_images(text: str) -> str:
-    return re.sub(r"![\[a-zA-Z0-9_\.. (),:\/\/\]]+", "", text)
+    return re.sub(r"![\[a-zA-Z0-9àòèìù_\.. (),:\/\/\]]+", "", text)
 
 
 def remove_bloat(text: str) -> str:
