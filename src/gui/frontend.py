@@ -3,9 +3,7 @@ import sys
 import chainlit as cl
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.utils.clean import clean
 from src.text.vector import VectorStore
-from src.model.cleaning import clean_text
 from src.model.inference import summarize
 from src.postgres.postgres import Postgres
 from src.utils.extract import extract_text
@@ -31,41 +29,41 @@ async def send_message(text: str) -> None:
 
 
 @cl.on_settings_update
-async def setup_agent(settings: dict[str, str]):
+async def setup_agent(settings):
+    # Load Model
     model_name = cl.user_session.get("model_name")
-    if model_name is None:
-        model_name = settings["Model"]
-        cl.user_session.set("model_name", model_name)
-
-        llm = await cl.make_async(load_llm)(settings["Model"], settings["Temperature"])
+    if model_name is None or model_name != settings["Model"]:
+        if model_name != settings["Model"]:
+            cleanup()
+        llm = await cl.make_async(load_llm)(settings)
         cl.user_session.set("llm", llm)
 
-    elif model_name != settings["Model"]:
-        cleanup()
-        model_name = settings["Model"]
-        cl.user_session.set("model_name", model_name)
+    # Check if loading knowledge base or messaging
+    modality = cl.user_session.get("modality")
+    if modality != settings["Modality"]:
+        cl.user_session.set("modality", settings["Modality"])
 
-        llm = await cl.make_async(load_llm)(settings["Model"], settings["Temperature"])
-        cl.user_session.set("llm", llm)
+    if modality == "message":
+        set_role(settings)
 
-    set_role(settings)
+    # Streaming tokens
     cl.user_session.set("stream_tokens", settings["Streaming"])
     print("Agent setup complete.")
 
 
 @cl.on_chat_end
 def cleanup():
-    # Clean up the language model
-    llm = cl.user_session.get("llm")
-    if llm is not None:
-        llm.stop()
-        print("Agent cleanup complete.")
-
     # Clean up the database and vector store
     vector_store: VectorStore = cl.user_session.get("vector_store")
     if vector_store is not None:
         vector_store.db.stop()
         print("Database cleanup complete.")
+
+    # Clean up the language model
+    llm = cl.user_session.get("llm")
+    if llm is not None:
+        llm.stop()
+        print("Agent cleanup complete.")
 
 
 @cl.on_chat_start
@@ -80,21 +78,33 @@ async def main():
     cl.user_session.set("vector_store", vector_store)
     await setup_agent(settings)
 
-    uploaded = None
-    while uploaded == None:
-         uploaded = await cl.AskFileMessage(
-            content="Please upload a text file to begin!", 
-            accept=["application/pdf", "image/png", "image/jpg", "image/jpeg"],
-            max_files=20,
-            max_size_mb=20,
-            timeout=360
-        ).send()
-    await send_message("Processing files...")
+    res = await cl.AskActionMessage(
+        content="",
+        actions=[
+            cl.Action(name="Preload Knowledge", payload={"value": "preload"}, label="📝 Preload Knowledge"),
+            cl.Action(name="Message", payload={"value": "message"}, label="💬 Message"),
+        ],
+    ).send()
 
-    text = await cl.make_async(extract_text)(cl.user_session.get("llm"), uploaded)
+    if res and res.get("payload").get("value") == "preload":
+        cl.user_session.set("modality", res.get("payload").get("value"))
 
-    await cl.make_async(vector_store.add)(text)
-    await send_message("Agent is ready to chat!")
+        uploaded = None
+        while uploaded == None:
+             uploaded = await cl.AskFileMessage(
+                content="Please upload one or multiple file/s (PDF, PNG, JPG) [max 20 files, 20MB each]", 
+                accept=["application/pdf", "image/png", "image/jpg", "image/jpeg"],
+                max_files=20,
+                max_size_mb=20,
+                timeout=360
+            ).send()
+        await send_message("Processing files...")
+
+        extracted_text = await cl.make_async(extract_text)(cl.user_session.get("llm"), uploaded)
+        extract_text = await cl.make_async
+
+        await cl.make_async(vector_store.add)(extracted_text)
+        await send_message("Knowledge base loaded.")
 
 
 @cl.on_message

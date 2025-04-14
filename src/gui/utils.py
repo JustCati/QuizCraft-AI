@@ -1,5 +1,3 @@
-import torch
-
 import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
@@ -72,6 +70,12 @@ async def create_settings():
 
     settings = await cl.ChatSettings(
         [
+            Select(
+              id="Modality",
+              label="Modality",
+              values=["Preload Data", "Message"],
+              initial_index=1, 
+            ),
             Select(
                 id="Model",
                 label="Model",
