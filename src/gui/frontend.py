@@ -30,23 +30,15 @@ async def send_message(text: str) -> None:
 
 @cl.on_settings_update
 async def setup_agent(settings):
-    # Load Model
     model_name = cl.user_session.get("model_name")
     if model_name is None or model_name != settings["Model"]:
         if model_name != settings["Model"]:
             cleanup()
         llm = await cl.make_async(load_llm)(settings)
-        cl.user_session.set("llm", llm)
+        cl.user_session.set("llm_ref", llm)
+        cl.user_session.set("llm", llm.model)
+    set_role(settings)
 
-    # Check if loading knowledge base or messaging
-    modality = cl.user_session.get("modality")
-    if modality != settings["Modality"]:
-        cl.user_session.set("modality", settings["Modality"])
-
-    if modality == "message":
-        set_role(settings)
-
-    # Streaming tokens
     cl.user_session.set("stream_tokens", settings["Streaming"])
     print("Agent setup complete.")
 
@@ -60,7 +52,7 @@ def cleanup():
         print("Database cleanup complete.")
 
     # Clean up the language model
-    llm = cl.user_session.get("llm")
+    llm = cl.user_session.get("llm_ref")
     if llm is not None:
         llm.stop()
         print("Agent cleanup complete.")
@@ -100,9 +92,8 @@ async def main():
             ).send()
         await send_message("Processing files...")
 
-        extracted_text = await cl.make_async(extract_text)(cl.user_session.get("llm"), uploaded)
-        extract_text = await cl.make_async
-
+        llm = cl.user_session.get("llm")
+        extracted_text = await cl.make_async(extract_text)(llm, uploaded)
         await cl.make_async(vector_store.add)(extracted_text)
         await send_message("Knowledge base loaded.")
 

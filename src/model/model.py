@@ -5,18 +5,18 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 
 class GenericOllamaModel(object):
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name):
         self.model_name = model_name
         self.available_models = self.__retrieve_available_models("available")
 
-    def __retrieve_info(self, operation: str) -> list[str]:
+    def __retrieve_info(self, operation):
         process = subprocess.run(["ollama", str(operation)], stdout=subprocess.PIPE)
         outFolder = process.stdout.decode("utf-8").split("\n")[1:-1]
         data = [x.split(" ")[0] for x in outFolder]
         data = [x.replace(":latest", "") for x in data]
         return data
 
-    def __retrieve_available_models(self, scope: str = "available") -> list[str]:
+    def __retrieve_available_models(self, scope):
         if scope not in ["available", "running"]:
             raise ValueError(f"Invalid scope: {scope}")
         if scope == "available":
@@ -24,7 +24,7 @@ class GenericOllamaModel(object):
         if scope == "running":
             return self.__retrieve_info("ps")
 
-    def check_model(self) -> None:
+    def check_model(self):
         running_models = self.__retrieve_available_models("running")
         if len(running_models) > 0:
             for model in running_models:
@@ -36,16 +36,16 @@ class GenericOllamaModel(object):
             process = subprocess.Popen(["ollama", "pull", self.model_name], stdout=subprocess.PIPE, bufsize=0)
             process.wait()
 
-    def __manage_Model(self, action: str = "run") -> None:
+    def __manage_Model(self, action = "run"):
         if action not in ["run", "stop"]:
             raise ValueError(f"Invalid action: {action}")
         subprocess.Popen(['ollama', action, self.model_name], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
-    def get(self) -> ChatOllama:
+    def get(self):
         self.__manage_Model("run")
-        return self.model
+        return self
 
-    def stop(self) -> None:
+    def stop(self):
         self.__manage_Model("stop")
 
     def __enter__(self) -> ChatOllama:
@@ -57,7 +57,7 @@ class GenericOllamaModel(object):
 
 
 class OllamaLanguageModel(GenericOllamaModel):
-    def __init__(self, model_name: str, temperature: float = 0.0, num_predict: int = -1) -> None:
+    def __init__(self, model_name, temperature = 0.0, num_predict = -1) -> None:
         super().__init__(model_name)
         super().check_model()
         self.model = ChatOllama(model=model_name, 
@@ -67,7 +67,7 @@ class OllamaLanguageModel(GenericOllamaModel):
 
 # mixedbread-ai/mxbai-embed-large-v1
 class HuggingFaceEmbeddingModel():
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name) -> None:
         model_kwargs = {'device':'cuda', 'trust_remote_code': True}
         encode_kwargs = {'normalize_embeddings': True}
         self.model = HuggingFaceEmbeddings(model_name=model_name, 
