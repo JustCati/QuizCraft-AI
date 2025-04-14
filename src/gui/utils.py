@@ -19,10 +19,12 @@ def set_role(settings: dict[str, str]) -> None:
         message_history = []
         cl.user_session.set("message_history", message_history)
 
-    message_history[0] = {
+    message = {
         "role": "assistant",
         "content": f"You are a professor that will {final}"
         }
+
+    message_history.append(message) if len(message_history) == 0 else message_history.insert(0, message)
 
 
 
