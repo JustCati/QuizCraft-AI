@@ -3,7 +3,7 @@ import re
 
 
 def remove_images(text: str) -> str:
-    return re.sub(r"![\[a-zA-Z0-9_\..\]]+[\(0-9a-zA-Z\._\)]+ ", "", text)
+    return re.sub(r"![\[a-zA-Z0-9_\.. (),:\/\/\]]+", "", text)
 
 
 def remove_links(text: str) -> str:
