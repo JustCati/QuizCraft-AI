@@ -63,5 +63,5 @@ def extract(llm, dir):
             extracted = chain.invoke({"text": ocr_prompt, "image": image_b64})
             file_extracted_text += extracted
             file_extracted_text += "\n"
-        print(f"Extracted text from {i} of {len(files)} images")
+        print(f"Extracted text from {i+1} of {len(files)} images")
     return file_extracted_text
