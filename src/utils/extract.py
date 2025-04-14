@@ -1,32 +1,14 @@
 import os
-from PIL import Image
 from tempfile import TemporaryDirectory
-from langchain_core.messages import HumanMessage
-from langchain_core.output_parsers import StrOutputParser
 
-from src.utils.pdf2img2pdf import convert_pdf2img, convert_to_base64
-
-
+from src.model.inference import extract
+from src.utils.pdf2img2pdf import convert_pdf2img
+from src.utils.regex import remove_images, remove_links
 
 
-def extract_text(llm, files: list[str]) -> list[str]:
-    def prompt_func(data):
-        text = data["text"]
-        image = data["image"]
-
-        image_part = {
-            "type": "image_url",
-            "image_url": f"data:image/jpeg;base64,{image}",
-        }
-
-        content_parts = []
-        text_part = {"type": "text", "text": text}
-
-        content_parts.append(image_part)
-        content_parts.append(text_part)
-        return [HumanMessage(content=content_parts)]
 
 
+def extract_text(llm, files):
     extracted_text = []
     for file in files:
         file = file.path
@@ -42,19 +24,8 @@ def extract_text(llm, files: list[str]) -> list[str]:
                 else:
                     raise ValueError(f"Unsupported file type: {file_extension}")
 
-            with open(os.path.join("src", "model", "prompts", "ocr.txt"), "r") as f:
-                ocr_prompt = f.read()
-
-            file_extracted_text = ""
-            for image_file in sorted(os.listdir(temp_dir)):
-                image_path = os.path.join(temp_dir, image_file)
-                if os.path.isfile(image_path):
-                    image = Image.open(image_path)
-                    image_b64 = convert_to_base64(image)
-
-                    chain = prompt_func | llm | StrOutputParser()
-                    extracted = chain.invoke({"text": ocr_prompt, "image": image_b64})
-                    file_extracted_text += "\n\n"
-                    file_extracted_text += extracted
+            file_extracted_text = extract(llm, temp_dir)
+            file_extracted_text = remove_images(file_extracted_text)
+            file_extracted_text = remove_links(file_extracted_text)
             extracted_text.append(file_extracted_text)
         return extracted_text
