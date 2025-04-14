@@ -90,7 +90,7 @@ async def main():
         uploaded = None
         while uploaded == None:
              uploaded = await cl.AskFileMessage(
-                content="Please upload one or multiple file/s (PDF, PNG, JPG) [max 20 files, 20MB each]", 
+                content="Please upload one or multiple file/s (PDF, PNG, JPG) [max 20 files]", 
                 accept=["application/pdf", "image/png", "image/jpg", "image/jpeg"],
                 max_files=20,
                 max_size_mb=20,
