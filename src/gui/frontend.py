@@ -128,3 +128,18 @@ async def main(message: cl.Message):
             else:
                 pass
                 #TODO: INFERENCE WITH LLM AND IMAGE AS INPUT
+
+    if len(message.content) > 0:
+        answer = await cl.make_async(summarize)(
+            llm,
+            message.content,
+            vector_store,
+        )
+
+        message_history.append({
+            "role": "assistant",
+            "content": answer
+        })
+        cl.user_session.set("message_history", message_history)
+        
+        await send_message(answer)

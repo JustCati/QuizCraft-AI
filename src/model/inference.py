@@ -16,7 +16,7 @@ def summarize(llm, msg, vector_store):
         return "\n\n".join(doc.page_content for doc in docs)
 
     PROMPT = ""
-    with open(os.path.join("src", "model", "summarize.txt"), "r") as f:
+    with open(os.path.join("src", "model", "prompts", "summarize.txt"), "r") as f:
         PROMPT = f.read()
     retriever = vector_store.get_retriever()
     prompt = PromptTemplate.from_template(PROMPT)
