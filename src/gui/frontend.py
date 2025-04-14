@@ -35,10 +35,10 @@ async def setup_agent(settings):
 @cl.on_chat_end
 def cleanup():
     #* Clean up the database and vector store
-    # vector_store: VectorStore = cl.user_session.get("vector_store")
-    # if vector_store is not None:
-    #     vector_store.db.stop()
-    #     print("Database cleanup complete.")
+    vector_store: VectorStore = cl.user_session.get("vector_store")
+    if vector_store is not None:
+        vector_store.db.stop()
+        print("Database cleanup complete.")
 
     #* Clean up the language model
     llm = cl.user_session.get("llm_ref")
@@ -59,7 +59,7 @@ async def main():
 
     async def init_vector_store():
         db = cl.user_session.get("db")
-        vector_store = await cl.make_async(create_vector_store)(db)
+        vector_store = await (await cl.make_async(create_vector_store)(db))
         cl.user_session.set("vector_store", vector_store)
 
     step = [
@@ -67,7 +67,6 @@ async def main():
         ("Creating vector store", init_vector_store),
     ]
     await show_sequential_progress(step)
-
     await setup_agent(settings)
 
     res = await cl.AskActionMessage(
