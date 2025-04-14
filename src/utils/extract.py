@@ -1,9 +1,9 @@
 import os
 from tempfile import TemporaryDirectory
 
+from src.utils.regex import *
 from src.model.inference import extract
 from src.utils.pdf2img2pdf import convert_pdf2img
-from src.utils.regex import remove_images, remove_links
 
 
 
@@ -24,8 +24,10 @@ def extract_text(llm, files):
                 else:
                     raise ValueError(f"Unsupported file type: {file_extension}")
 
-            file_extracted_text = extract(llm, temp_dir)
-            file_extracted_text = remove_images(file_extracted_text)
-            file_extracted_text = remove_links(file_extracted_text)
-            extracted_text.append(file_extracted_text)
+            extracted = extract(llm, temp_dir)
+            extracted = remove_images(extracted)
+            extracted = remove_links(extracted)
+            extracted = remove_bloat(extracted)
+
+            extracted_text.append(extracted)
         return extracted_text
