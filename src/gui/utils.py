@@ -36,60 +36,45 @@ async def create_vector_store(postgres_db: Postgres) -> VectorStore:
     return vector_store
 
 
-def load_embed(model_name: str) -> HuggingFaceEmbeddingModel:
+def load_embed(model_name):
     return HuggingFaceEmbeddingModel(model_name).model
 
 
-def load_llm(model_name: str, temperature: float) -> OllamaLanguageModel:
-    return OllamaLanguageModel(model_name, temperature).get()
+def load_llm(settings):
+    try:
+        llm = OllamaLanguageModel(settings["Model"], settings["Temperature"]).get()
+        cl.user_session.set("model_name", settings["Model"])
+    except:
+        print("Memory error, loading next smaller model")
+        while True:
+            model_name = cl.user_session.get("models_list")[cl.user_session.get("model_idx") + 1]
+            cl.user_session.set("model_idx", cl.user_session.get("model_idx") + 1)
+            try:
+                llm = OllamaLanguageModel(model_name, settings["Temperature"]).get()
+                cl.user_session.set("model_name", model_name)
+                break
+            except:
+                continue
+    return llm
 
 
-def get_models() -> list[dict[str, dict[str, str]]]:
-    MODELS = [
-            {
-                "qwen2.5:7b": {
-                    "model": "qwen2.5:7b",
-                    "memory": 6.5e9 / 1024**3,
-                    }
-                },
-            {
-                "gemma3:27b": {
-                    "model": "gemma3:27b",
-                    "memory": 22.5e9 / 1024**3,
-                    }
-                }
-            # {
-            #     "qwen2.5:32b": {
-            #         "model": "qwen2.5:32b",
-            #         "memory": 22.5e9 / 1024**3,
-            #         }
-            #     },
-        ]
-    return MODELS
 
+async def create_settings():
+    MODELS_LIST = [
+        "gemma3:27b",
+        "gemma3:12b",
+        "gemma3:4b",
+    ]
+    cl.user_session.set("models_list", MODELS_LIST)
+    cl.user_session.set("model_idx", 0)
 
-def get_list_models() -> list[str]:
-    return [list(model.keys())[0] for model in get_models()]
-
-
-def get_best_model() -> int:
-    MODELS = get_models()
-    available_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
-
-    sorted_models = sorted(MODELS, key=lambda x: list(x.values())[0]['memory'], reverse=True)
-    best = [model for model in sorted_models if list(model.values())[0]['memory'] <= available_memory][0]
-    best_index = MODELS.index(best)
-    return best_index
-
-
-async def create_settings() -> dict[str, str]:
     settings = await cl.ChatSettings(
         [
             Select(
                 id="Model",
-                label="QwQ Model",
-                values=get_list_models(),
-                initial_index=get_best_model(),
+                label="Model",
+                values=MODELS_LIST,
+                initial_index=0
             ),
             Select(
                 id="Role",
