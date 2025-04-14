@@ -41,26 +41,6 @@ async def create_vector_store(postgres_db: Postgres) -> VectorStore:
     return vector_store
 
 
-async def index_files(llm, uploaded):
-    llm = cl.user_session.get("llm")
-    vector_store: VectorStore = cl.user_session.get("vector_store")
-    extracted_text = await cl.make_async(extract_text)(llm, uploaded)
-    await cl.make_async(vector_store.add)(extracted_text)
-
-
-async def create_db():
-    env_file = os.path.join(os.path.dirname(__file__), "src", "postgres", ".env")
-    docker_compose = env_file.replace(".env", "docker-compose.yml")
-    db = await cl.make_async(Postgres)(docker_compose, env_file)
-    cl.user_session.set("db", db)
-
-
-async def init_vector_store():
-    db = cl.user_session.get("db")
-    vector_store = await (await cl.make_async(create_vector_store)(db))
-    cl.user_session.set("vector_store", vector_store)
-
-
 def load_embed(model_name):
     return HuggingFaceEmbeddingModel(model_name).model
 
