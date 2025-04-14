@@ -14,15 +14,15 @@ def set_role(settings: dict[str, str]) -> None:
     else:
         final = "create a questionnaire based on the requested argument."
 
-    cl.user_session.set(
-        "message_history", 
-        [
-            {
-                "role": "assistant",
-                "content": f"You are a professor that will {final}"
-            }
-        ]
-    )
+    message_history = cl.user_session.get("message_history")
+    if message_history is None:
+        message_history = []
+        cl.user_session.set("message_history", message_history)
+
+    message_history[0] = {
+        "role": "assistant",
+        "content": f"You are a professor that will {final}"
+        }
 
 
 
