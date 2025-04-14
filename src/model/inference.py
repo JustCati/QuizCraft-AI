@@ -5,8 +5,6 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
 
-# qwen2.5:32b-instruct-q3_K_M
-# mxbai-embed-large
 
 
 def summarize(llm, msg, vector_store):
@@ -14,7 +12,7 @@ def summarize(llm, msg, vector_store):
         return "\n\n".join(doc.page_content for doc in docs)
 
     PROMPT = ""
-    with open(os.path.join("src", "model", "prompt.txt"), "r") as f:
+    with open(os.path.join("src", "model", "summarize.txt"), "r") as f:
         PROMPT = f.read()
     retriever = vector_store.get_retriever()
     prompt = PromptTemplate.from_template(PROMPT)
