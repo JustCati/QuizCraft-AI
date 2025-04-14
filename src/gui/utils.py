@@ -5,7 +5,6 @@ from chainlit.input_widget import Select, Switch, Slider
 
 from src.text.vector import VectorStore
 from src.utils.extract import extract_text
-from src.postgres.postgres import Postgres
 from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
 
 
@@ -31,12 +30,12 @@ def set_role(settings: dict[str, str]) -> None:
 
 
 
-async def create_vector_store(postgres_db: Postgres) -> VectorStore:
+async def create_vector_store() -> VectorStore:
     embed_model = cl.user_session.get("embed_model")
     if embed_model is None:
         embed_model = await cl.make_async(load_embed)("mixedbread-ai/mxbai-embed-large-v1")
         cl.user_session.set("embed_model", embed_model)
-    vector_store = VectorStore(embed_model, postgres_db)
+    vector_store = VectorStore(embed_model)
     print("Vector store created.")
     return vector_store
 

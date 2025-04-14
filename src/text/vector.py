@@ -1,34 +1,35 @@
+import os
+import uuid
+import shutil
 from io import StringIO
 from hashlib import sha256
 
-from langchain_postgres.vectorstores import PGVector
-from langchain_experimental.text_splitter import SemanticChunker
-
-from src.postgres.postgres import Postgres
+from langchain_chroma import Chroma
+from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 
 
 class VectorStore():
-    def __init__(self,
-                 embed_model: str,
-                 db: Postgres) -> None:
-
-        self.db = db
+    def __init__(self, embed_model):
         self.embed_model = embed_model
-        self.splitter = SemanticChunker(embeddings=self.embed_model, breakpoint_threshold_type="percentile")
-
-        self.vector_store = PGVector(
-            embeddings=self.embed_model,
-            collection_name="pdfs",
-            connection="postgresql+psycopg://{}:{}@{}:{}/{}".format(
-                self.db.env["POSTGRES_USER"],
-                self.db.env["POSTGRES_PASSWORD"],
-                self.db.env.get("POSTGRES_HOST", "localhost"),
-                self.db.env.get("POSTGRES_PORT", "5432"),
-                self.db.env["POSTGRES_DB"]
-            ),
-            use_jsonb=True
+        self.splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on = [
+                ("#", "Header 1"),
+                ("##", "Header 2"),
+                ("###", "Header 3")
+            ],
         )
+
+        self.id = uuid.UUID(bytes=os.urandom(16)).hex
+        self.vector_store = Chroma(
+            embedding_function=self.embed_model,
+            persist_directory="data",
+            collection_name=self.id,
+        )
+
+    def clean(self):
+        shutil.rmtree("data", ignore_errors=True)
+        print("Vector store cleaned.")
 
 
     def __calculate_hash(self, text: str) -> str:
@@ -43,23 +44,27 @@ class VectorStore():
         return hasher.hexdigest()
 
 
-    def __get_semantic_doc(self, text: str) -> list[dict[str, str]]:
-        docs = self.splitter.create_documents(text)
-        docs = self.splitter.split_documents(docs)
-        return docs
+    def __get_chunks(self, text):
+        chunks = self.splitter.split_text(text)
+        return chunks
 
 
-    def add(self, texts: list[str] | str) -> None:
+    def add(self, texts) -> None:
         texts = [texts] if isinstance(texts, str) else texts
 
         for text in texts:
-            hash = self.__calculate_hash(text)
-            if not self.db.does_file_exist(hash):
-                self.db.save_file_to_db(hash)
-                docs = self.__get_semantic_doc(text)
-                self.vector_store.add_documents(docs)
+            chunks = self.__get_chunks(text)
+            for chunk in chunks:
+                chunk_hash = self.__calculate_hash(chunk.page_content)
+                if not self.vector_store.get_by_ids([chunk_hash]):
+                    self.vector_store.add_documents(
+                        [chunk],
+                        ids=[chunk_hash],
+                    )
+                else:
+                    print(f"Document with hash {chunk_hash} already exists in the vector store.")
         print("Files indexed.")
 
 
     def get_retriever(self):
-        return self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 1})
+        return self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})

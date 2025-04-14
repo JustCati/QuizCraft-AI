@@ -18,22 +18,16 @@ warnings.filterwarnings("ignore")
 async def index_files(llm, uploaded):
     llm = cl.user_session.get("llm")
     vector_store: VectorStore = cl.user_session.get("vector_store")
-    extracted_text = await cl.make_async(extract_text)(llm, uploaded)
+    # extracted_text = await cl.make_async(extract_text)(llm, uploaded)
+    with open("extracted.txt", "r") as f:
+        extracted_text = f.read()
+    extracted_text = [extracted_text]
     await cl.make_async(vector_store.add)(extracted_text)
 
 
-async def create_db():
-    env_file = os.path.join(os.path.dirname(__file__), "src", "postgres", ".env")
-    docker_compose = env_file.replace(".env", "docker-compose.yml")
-    db = await cl.make_async(Postgres)(docker_compose, env_file)
-    cl.user_session.set("db", db)
-
-
 async def init_vector_store():
-    db = cl.user_session.get("db")
-    vector_store = await (await cl.make_async(create_vector_store)(db))
+    vector_store = await (await cl.make_async(create_vector_store)())
     cl.user_session.set("vector_store", vector_store)
-
 
 
 
@@ -42,7 +36,7 @@ async def setup_agent(settings):
     model_name = cl.user_session.get("model_name")
     if model_name is None or model_name != settings["Model"]:
         if model_name != settings["Model"]:
-            cleanup()
+            cleanup(llm = True, vector = False)
         llm = await cl.make_async(load_llm)(settings)
         cl.user_session.set("llm_ref", llm)
         cl.user_session.set("llm", llm.model)
@@ -53,28 +47,25 @@ async def setup_agent(settings):
 
 
 @cl.on_chat_end
-def cleanup():
-    #* Clean up the database and vector store
-    vector_store: VectorStore = cl.user_session.get("vector_store")
-    if vector_store is not None:
-        vector_store.db.stop()
-        print("Database cleanup complete.")
+def cleanup(llm = True, vector = False):
+    if vector:
+        vector_store: VectorStore = cl.user_session.get("vector_store")
+        if vector_store is not None:
+            vector_store.clean()
+            print("Database cleanup complete.")
 
-    #* Clean up the language model
-    llm = cl.user_session.get("llm_ref")
-    if llm is not None:
-        llm.stop()
-        print("Agent cleanup complete.")
+    if llm:
+        llm = cl.user_session.get("llm_ref")
+        if llm is not None:
+            llm.stop()
+            print("Agent cleanup complete.")
 
 
 @cl.on_chat_start
 async def main():
     settings = await create_settings()
 
-    step = [
-        ("Creating database", create_db),
-        ("Creating vector store", init_vector_store),
-    ]
+    step = [("Creating vector store", init_vector_store)]
     await show_sequential_progress(step)
     await setup_agent(settings)
 
