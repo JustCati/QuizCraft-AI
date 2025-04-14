@@ -5,9 +5,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.gui.utils import *
 from src.text.vector import VectorStore
+from src.utils.regex import index_or_not
 from src.model.inference import summarize
-from src.postgres.postgres import Postgres
-from src.utils.extract import extract_text
 from src.model.model import OllamaLanguageModel
 
 import warnings
@@ -51,17 +50,6 @@ def cleanup():
 async def main():
     settings = await create_settings()
 
-    async def create_db():
-        env_file = os.path.join(os.path.dirname(__file__), "src", "postgres", ".env")
-        docker_compose = env_file.replace(".env", "docker-compose.yml")
-        db = await cl.make_async(Postgres)(docker_compose, env_file)
-        cl.user_session.set("db", db)
-
-    async def init_vector_store():
-        db = cl.user_session.get("db")
-        vector_store = await (await cl.make_async(create_vector_store)(db))
-        cl.user_session.set("vector_store", vector_store)
-
     step = [
         ("Creating database", create_db),
         ("Creating vector store", init_vector_store),
@@ -88,12 +76,6 @@ async def main():
                 timeout=360
             ).send()
 
-        async def index_files(llm, uploaded):
-            llm = cl.user_session.get("llm")
-            vector_store: VectorStore = cl.user_session.get("vector_store")
-            extracted_text = await cl.make_async(extract_text)(llm, uploaded)
-            await cl.make_async(vector_store.add)(extracted_text)
-
         await show_update_message(
             ["Indexing files", "✅ Files processed successfully!"], 
             index_files, 
@@ -113,10 +95,24 @@ async def main(message: cl.Message):
         cl.user_session.set("message_history", message_history)
     message_history.append({"role": "user", "content": message.content})
 
-    if len(message.elements) > 0 and len(message.content) == 0:
-        total_text = await cl.make_async(extract_text)(cl.user_session.get("llm"), message.elements)
-        await cl.make_async(vector_store.add)(total_text)
-
-    answer = await cl.make_async(summarize)(llm, message.content, vector_store)
-    await send_message(answer)
-    message_history.append({"role": "assistant", "content": answer})
+    if len(message.elements) > 0:
+        if len(message.content) == 0:
+            print("Empty message, indexing files...")
+            await show_update_message(
+                ["Indexing files", "✅ Files processed successfully!"], 
+                index_files, 
+                cl.user_session.get("llm"), 
+                message.elements
+            )
+        else:
+            if index_or_not(message.content):
+                print("User is asking for indexing, indexing files...")
+                await show_update_message(
+                    ["Indexing files", "✅ Files processed successfully!"], 
+                    index_files, 
+                    cl.user_session.get("llm"), 
+                    message.elements
+                )
+            else:
+                pass
+                #TODO: INFERENCE WITH LLM AND IMAGE AS INPUT
