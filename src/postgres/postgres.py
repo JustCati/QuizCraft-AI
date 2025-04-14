@@ -62,10 +62,12 @@ class Postgres:
             if action == "launch":
                 print("Postgres already running.")
             elif action == "stop":
+                print("Stopping Postgres...")
                 docker.compose.down(quiet=True)
                 print("Postgres stopped.")
         else:
             if action == "launch":
+                print("Launching Postgres...")
                 docker.compose.up(detach=True, wait=True, quiet=True)
                 print("Postgres launched.")
             elif action == "stop":
