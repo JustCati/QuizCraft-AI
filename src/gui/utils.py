@@ -61,9 +61,45 @@ def load_llm(settings):
     return llm
 
 
+async def show_sequential_progress(steps):
+    msg = cl.Message(content="Initializing...")
+    await msg.send()
 
-async def show_update_message(msgs, func_call, *args, **kwargs):   
-    start_msg, ending_msg = msgs  
+    stop_event = asyncio.Event()
+
+    async def animate(current_step):
+        dots = ""
+        while not stop_event.is_set():
+            dots = "." if dots == "..." else dots + "."
+            msg.content = f"{current_step()}{dots}"
+            await msg.update()
+            await asyncio.sleep(0.5)
+
+    current_text = {"step": "Starting"}
+
+    def current_step():
+        return current_text["step"]
+
+    animation_task = asyncio.create_task(animate(current_step))
+
+    try:
+        for step_name, step_func in steps:
+            current_text["step"] = step_name
+            await asyncio.sleep(0.2)  # Allow one update cycle
+            await step_func()
+        stop_event.set()
+        await animation_task
+        msg.content = "✅ Initialization complete!"
+        await msg.update()
+    except Exception as e:
+        stop_event.set()
+        await animation_task
+        msg.content = f"❌ Failed: {e}"
+        await msg.update()
+        raise
+
+async def show_update_message(msgs, func_call, *args, **kwargs):
+    start_msg, ending_msg = msgs
    
     loading_msg, stop_loading = await show_loading_message(start_msg)
     try:

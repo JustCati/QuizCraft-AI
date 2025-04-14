@@ -57,20 +57,16 @@ async def main():
         db = await cl.make_async(Postgres)(docker_compose, env_file)
         cl.user_session.set("db", db)
 
-    await show_update_message(
-            ["Launching postgres", "Database created successfully!"], 
-            create_db
-        )
-
-    async def create_vector_store(db: Postgres):
+    async def init_vector_store():
+        db = cl.user_session.get("db")
         vector_store = await cl.make_async(create_vector_store)(db)
         cl.user_session.set("vector_store", vector_store)
 
-    await show_update_message(
-            ["Creating vector store", "Vector store created successfully!"], 
-            create_vector_store, 
-            cl.user_session.get("db")
-        )
+    step = [
+        ("Creating database", create_db),
+        ("Creating vector store", init_vector_store),
+    ]
+    await show_sequential_progress(step)
 
     await setup_agent(settings)
 
@@ -112,10 +108,13 @@ async def main(message: cl.Message):
     llm: OllamaLanguageModel = cl.user_session.get("llm")
     vector_store: VectorStore = cl.user_session.get("vector_store")
 
-    message_history: list = cl.user_session.get("message_history")
+    message_history = cl.user_session.get("message_history")
+    if message_history is None:
+        message_history = []
+        cl.user_session.set("message_history", message_history)
     message_history.append({"role": "user", "content": message.content})
 
-    if len(message.elements) > 0:
+    if len(message.elements) > 0 and len(message.content) == 0:
         total_text = await cl.make_async(extract_text)(cl.user_session.get("llm"), message.elements)
         await cl.make_async(vector_store.add)(total_text)
 
