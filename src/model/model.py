@@ -1,7 +1,9 @@
 import subprocess
+from PIL import Image
 from langchain_ollama import ChatOllama
-from langchain_huggingface import HuggingFaceEmbeddings
-
+from langchain_core.embeddings import Embeddings
+from sentence_transformers import SentenceTransformer
+from transformers import AutoModel, AutoImageProcessor
 
 
 class GenericOllamaModel(object):
@@ -65,17 +67,43 @@ class OllamaLanguageModel(GenericOllamaModel):
                         num_predict=num_predict)
 
 
-# mixedbread-ai/mxbai-embed-large-v1
-class HuggingFaceEmbeddingModel():
-    def __init__(self, model_name) -> None:
-        model_kwargs = {'device':'cuda', 'trust_remote_code': True}
-        encode_kwargs = {'normalize_embeddings': True}
-        self.model = HuggingFaceEmbeddings(model_name=model_name, 
-                                           model_kwargs=model_kwargs,
-                                           encode_kwargs=encode_kwargs)
+# nomic-ai/nomic-embed-text-v1.5
+# nomic-ai/nomic-embed-vision-v1.5
+class MultiModalEmbeddingModel(Embeddings):
+    def __init__(self, text_model_name, visual_model_name) -> None:
+        self.model = None
+        self.processor = None
+        self.query_prefix = "search_query: "
+        self.indexing_prefix = "search_document: "
 
-    def __enter__(self) -> HuggingFaceEmbeddings:
-        return self.model
+        self.text_model = SentenceTransformer(text_model_name, 
+                                              device="cuda",
+                                              trust_remote_code=True,)
+        self.text_model.eval()
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.vis_processor = AutoImageProcessor.from_pretrained(visual_model_name)
+        self.vis_model = AutoModel.from_pretrained(visual_model_name,
+                                                   device_map="cuda",
+                                                   trust_remote_code=True)
+        self.vis_model.eval()
+
+
+    def embed_documents(self, texts):
+        texts = [texts] if isinstance(texts, str) else texts
+        texts = [self.indexing_prefix + text for text in texts]
+        embeddings = self.text_model.encode(texts, show_progress_bar=False, normalize_embeddings=True)
+        return embeddings
+
+
+    def embed_query(self, text):
+        text = self.query_prefix + text
+        embedding = self.text_model.encode(text, show_progress_bar=False, normalize_embeddings=True)
+        return embedding
+
+
+    def embed_image(self, images):
+        pass
+
+
+    def embed_text_query(self, query):
         pass

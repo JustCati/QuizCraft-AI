@@ -5,7 +5,7 @@ from chainlit.input_widget import Select, Switch, Slider
 
 from src.text.vector import VectorStore
 from langchain_core.messages import HumanMessage, AIMessage
-from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
+from src.model.model import MultiModalEmbeddingModel, OllamaLanguageModel
 
 
 
@@ -31,17 +31,20 @@ def init_history(settings: dict[str, str]) -> None:
 
 
 async def create_vector_store() -> VectorStore:
+    def load_embed(text_model_name, image_model_name):
+        return MultiModalEmbeddingModel(text_model_name, image_model_name)
+
     embed_model = cl.user_session.get("embed_model")
     if embed_model is None:
-        embed_model = await cl.make_async(load_embed)("mixedbread-ai/mxbai-embed-large-v1")
+        embed_model = await cl.make_async(load_embed)("nomic-ai/nomic-embed-text-v1.5", "nomic-ai/nomic-embed-vision-v1.5")
         cl.user_session.set("embed_model", embed_model)
+
     vector_store = VectorStore(embed_model)
     print("Vector store created.")
     return vector_store
 
 
-def load_embed(model_name):
-    return HuggingFaceEmbeddingModel(model_name).model
+
 
 
 def load_llm(settings):
