@@ -8,6 +8,7 @@ from src.text.vector import VectorStore
 from src.utils.regex import index_or_not
 from src.model.inference import summarize
 from src.model.model import OllamaLanguageModel
+from langchain_core.messages import HumanMessage, AIMessage
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -40,7 +41,7 @@ async def setup_agent(settings):
         llm = await cl.make_async(load_llm)(settings)
         cl.user_session.set("llm_ref", llm)
         cl.user_session.set("llm", llm.model)
-    set_role(settings)
+    init_history(settings)
 
     cl.user_session.set("stream_tokens", settings["Streaming"])
     print("Agent setup complete.")
@@ -64,6 +65,7 @@ def cleanup(llm = True, vector = False):
 @cl.on_chat_start
 async def main():
     settings = await create_settings()
+    cl.user_session.set("settings", settings)
 
     step = [("Creating vector store", init_vector_store)]
     await show_sequential_progress(step)
@@ -103,9 +105,9 @@ async def main(message: cl.Message):
 
     message_history = cl.user_session.get("message_history")
     if message_history is None:
-        message_history = []
-        cl.user_session.set("message_history", message_history)
-    message_history.append({"role": "user", "content": message.content})
+        init_history(cl.user_session.get("settings"))
+        message_history = cl.user_session.get("message_history")
+    message_history.append(HumanMessage(content=message.content))
 
     if len(message.elements) > 0:
         if len(message.content) == 0:
@@ -136,10 +138,7 @@ async def main(message: cl.Message):
             vector_store,
         )
 
-        message_history.append({
-            "role": "assistant",
-            "content": answer
-        })
+        message_history.append(AIMessage(content=answer))
         cl.user_session.set("message_history", message_history)
-        
+
         await send_message(answer)

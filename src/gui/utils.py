@@ -4,13 +4,15 @@ import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
 from src.text.vector import VectorStore
-from src.utils.extract import extract_text
+from langchain_core.messages import HumanMessage, AIMessage
 from src.model.model import HuggingFaceEmbeddingModel, OllamaLanguageModel
 
 
 
 
-def set_role(settings: dict[str, str]) -> None:
+
+
+def init_history(settings: dict[str, str]) -> None:
     if settings["Role"] == "Explain/Summarize":
         final = "answer and explain the requested argument to a student."
     else:
@@ -21,10 +23,8 @@ def set_role(settings: dict[str, str]) -> None:
         message_history = []
         cl.user_session.set("message_history", message_history)
 
-    message = {
-        "role": "assistant",
-        "content": f"You are a professor that will {final}"
-        }
+    message = f"You are a professor that will {final}"
+    message = HumanMessage(content=message)
 
     message_history.append(message) if len(message_history) == 0 else message_history.insert(0, message)
 
