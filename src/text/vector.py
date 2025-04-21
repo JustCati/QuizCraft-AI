@@ -1,5 +1,3 @@
-import os
-import uuid
 import shutil
 from io import StringIO
 from hashlib import sha256
@@ -20,12 +18,12 @@ class VectorStore():
             ],
         )
 
-        self.id = uuid.UUID(bytes=os.urandom(16)).hex
         self.vector_store = Chroma(
             embedding_function=self.embed_model,
             persist_directory="data",
-            collection_name=self.id,
+            collection_name="documents",
         )
+
 
     def clean(self):
         shutil.rmtree("data", ignore_errors=True)
