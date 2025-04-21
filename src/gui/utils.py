@@ -145,10 +145,17 @@ async def send_message(text: str) -> None:
 
 
 async def create_settings():
+    # MODELS_LIST = [
+    #     "gemma3:27b",
+    #     "gemma3:12b",
+    #     "gemma3:4b",
+    #     "gemma3:1b",
+    # ]
     MODELS_LIST = [
-        "gemma3:27b",
-        "gemma3:12b",
-        "gemma3:4b",
+        "gemma3:27b-it-qat",
+        "gemma3:12b-it-qat",
+        "gemma3:4b-it-qat",
+        "gemma3:1b-it-qat"
     ]
     cl.user_session.set("models_list", MODELS_LIST)
     cl.user_session.set("model_idx", 0)
