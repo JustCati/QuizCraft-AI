@@ -50,7 +50,7 @@ async def setup_agent(settings):
 @cl.on_chat_end
 def cleanup(llm = True, vector = False):
     if vector:
-        vector_store: VectorStore = cl.user_session.get("vector_store")
+        vector_store = cl.user_session.get("vector_store")
         if vector_store is not None:
             vector_store.clean()
             print("Database cleanup complete.")
@@ -71,15 +71,9 @@ async def main():
     await show_sequential_progress(step)
     await setup_agent(settings)
 
-    res = await cl.AskActionMessage(
-        content="",
-        actions=[
-            cl.Action(name="Preload Knowledge", payload={"value": "preload"}, label="📝 Preload Knowledge"),
-            cl.Action(name="Message", payload={"value": "message"}, label="💬 Message"),
-        ],
-    ).send()
-
-    if res and res.get("payload").get("value") == "preload":
+    vector_store = cl.user_session.get("vector_store")
+    if len(vector_store.vector_store.get()["ids"]) == 0:
+        print("Vector store is empty, please upload files to index.")
         uploaded = None
         while uploaded == None:
              uploaded = await cl.AskFileMessage(
@@ -96,6 +90,7 @@ async def main():
             cl.user_session.get("llm"), 
             uploaded
         )
+    await send_message("Hi! I am ready to assist you. You can ask me any questions or request a summary of the indexed files. If you want to index new files, just attach them to the message.")
 
 
 @cl.on_message
