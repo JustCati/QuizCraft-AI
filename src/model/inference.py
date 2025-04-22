@@ -1,8 +1,9 @@
 import os
+import toml
 from PIL import Image
 
 from langchain_core.messages import HumanMessage
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
@@ -15,14 +16,19 @@ def summarize(llm, msg, vector_store):
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
-    PROMPT = ""
-    with open(os.path.join("src", "model", "prompts", "summarize.txt"), "r") as f:
-        PROMPT = f.read()
+    with open(os.path.join("src", "model", "prompts", "summarize.toml"), "r") as f:
+        prompts = toml.load(f)
+        system_prompt = prompts["prompts"]["system"]
+        user_prompt = prompts["prompts"]["user"]
+
     retriever = vector_store.get_retriever()
-    prompt = PromptTemplate.from_template(PROMPT)
+    prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("user", user_prompt),
+        ])
 
     lang_chain = (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        {"context": retriever | format_docs, "query": RunnablePassthrough()}
         | prompt
         | llm
         | StrOutputParser()
