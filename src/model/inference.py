@@ -55,7 +55,7 @@ def extract(llm, dir):
         return [HumanMessage(content=content_parts)]
 
     with open(os.path.join("src", "model", "prompts", "ocr.txt"), "r") as f:
-        ocr_prompt = f.read()
+        ocr_prompt = toml.load(f)["prompts"]["system"]
 
     file_extracted_text = ""
     files = sorted(os.listdir(dir))

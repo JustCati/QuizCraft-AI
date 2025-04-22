@@ -1,2 +1,0 @@
-Below is the image of one page of a document, as well as some raw textual content that was previously extracted for it. Just return the markdown text representation of this document as if you were reading it naturally.
-Do not hallucinate.
