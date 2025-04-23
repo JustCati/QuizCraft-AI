@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.gui.utils import *
 from src.text.vector import VectorStore
-from src.utils.regex import index_or_not
+from src.utils.extract import extract_text
 from src.model.model import OllamaLanguageModel
 from src.model.inference import summarize, rewrite_query
 from langchain_core.messages import HumanMessage, AIMessage
@@ -90,7 +90,7 @@ async def main():
             cl.user_session.get("llm"), 
             uploaded
         )
-    await send_message("Hi! I am ready to assist you. You can ask me any questions or request a summary of the indexed files. If you want to index new files, just attach them to the message.")
+    await send_message("CIAO! Sono pronto ad aiutarti. Puoi farmi qualsiasi domanda o richiedere un riepilogo dei file indicizzati. Se vuoi indicizzare nuovi file, basta che alleghi il pdf al messaggio.")
 
 
 @cl.on_message
@@ -100,14 +100,14 @@ async def main(message: cl.Message):
 
     if len(message.elements) > 0:
         for element in message.elements:
-            if element.mime == "pdf":
+            if "pdf" in element.mime:
                 await show_update_message(
                     ["Indexing files", "✅ Files processed successfully!"], 
                     index_files, 
                     cl.user_session.get("llm"), 
                     message.elements
                 )
-            elif element.mime == "image":
+            elif "image" in element.mime:
                 with open(element.path, "rb") as f:
                     img_data = base64.b64encode(f.read()).decode("utf-8")
 
