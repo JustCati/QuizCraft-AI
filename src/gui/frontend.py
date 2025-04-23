@@ -1,13 +1,14 @@
 import os
 import sys
+import base64
 import chainlit as cl
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.gui.utils import *
 from src.text.vector import VectorStore
 from src.utils.regex import index_or_not
-from src.model.inference import summarize
 from src.model.model import OllamaLanguageModel
+from src.model.inference import summarize, rewrite_query
 from langchain_core.messages import HumanMessage, AIMessage
 
 import warnings
@@ -41,7 +42,6 @@ async def setup_agent(settings):
         llm = await cl.make_async(load_llm)(settings)
         cl.user_session.set("llm_ref", llm)
         cl.user_session.set("llm", llm.model)
-    init_history(settings)
 
     cl.user_session.set("stream_tokens", settings["Streaming"])
     print("Agent setup complete.")
@@ -98,42 +98,35 @@ async def main(message: cl.Message):
     llm: OllamaLanguageModel = cl.user_session.get("llm")
     vector_store: VectorStore = cl.user_session.get("vector_store")
 
-    message_history = cl.user_session.get("message_history")
-    if message_history is None:
-        init_history(cl.user_session.get("settings"))
-        message_history = cl.user_session.get("message_history")
-    message_history.append(HumanMessage(content=message.content))
-
     if len(message.elements) > 0:
-        if len(message.content) == 0:
-            print("Empty message, indexing files...")
-            await show_update_message(
-                ["Indexing files", "✅ Files processed successfully!"], 
-                index_files, 
-                cl.user_session.get("llm"), 
-                message.elements
-            )
-        else:
-            if index_or_not(message.content):
-                print("User is asking for indexing, indexing files...")
+        for element in message.elements:
+            if element.mime == "pdf":
                 await show_update_message(
                     ["Indexing files", "✅ Files processed successfully!"], 
                     index_files, 
                     cl.user_session.get("llm"), 
                     message.elements
                 )
-            else:
-                pass
-                #TODO: INFERENCE WITH LLM AND IMAGE AS INPUT
+            elif element.mime == "image":
+                with open(element.path, "rb") as f:
+                    img_data = base64.b64encode(f.read()).decode("utf-8")
 
     if len(message.content) > 0:
+        user_query = message.content
+        chat_history = get_chat_history()
+
+        if len(chat_history) > 0:
+            user_query = rewrite_query(user_query, chat_history, llm)
+            print(f"USER QUERY REWRITTEN: {user_query}")
+
         answer = await cl.make_async(summarize)(
             llm,
-            message.content,
+            user_query,
             vector_store,
         )
 
-        message_history.append(AIMessage(content=answer))
-        cl.user_session.set("message_history", message_history)
+        chat_history.append(HumanMessage(content=message.content))
+        chat_history.append(AIMessage(content=answer))
+        cl.user_session.set("chat_history", chat_history)
 
         await send_message(answer)

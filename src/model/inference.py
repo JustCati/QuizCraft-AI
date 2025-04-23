@@ -6,9 +6,40 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import HumanMessage, AIMessage
 
 from src.utils.pdf2img2pdf import convert_to_base64
 
+
+
+
+def rewrite_query(query, history, llm, history_length = 10):
+    with open(os.path.join("src", "model", "prompts", "chat_history.toml"), "r") as f:
+        prompts = toml.load(f)
+        system_prompt = prompts["prompts"]["system"]
+        user_prompt = prompts["prompts"]["user"]
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("user", user_prompt)
+    ])
+
+    history_string = ""
+    for i, message in enumerate(history):
+        if i <= history_length:
+            if isinstance(message, AIMessage):
+                history_string += f"Assistant: {message.content}\n"
+            if isinstance(message, HumanMessage):
+                history_string += f"User: {message.content}\n"
+
+    rewrite_chain = (
+        prompt
+        | llm
+        | StrOutputParser()
+    )
+    return rewrite_chain.invoke({"history": history_string, "user_query": query})
+
+    
 
 
 
@@ -27,13 +58,13 @@ def summarize(llm, msg, vector_store):
             ("user", user_prompt),
         ])
 
-    lang_chain = (
+    rag_chain = (
         {"context": retriever | format_docs, "query": RunnablePassthrough()}
         | prompt
         | llm
         | StrOutputParser()
     )
-    return lang_chain.invoke(msg)
+    return rag_chain.invoke(msg)
 
 
 

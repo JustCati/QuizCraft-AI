@@ -12,21 +12,13 @@ from src.model.model import MultiModalEmbeddingModel, OllamaLanguageModel
 
 
 
-def init_history(settings: dict[str, str]) -> None:
-    if settings["Role"] == "Explain/Summarize":
-        final = "answer and explain the requested argument to a student."
-    else:
-        final = "create a questionnaire based on the requested argument."
+def get_chat_history():
+    chat_history = cl.user_session.get("chat_history")
+    if chat_history is None:
+        chat_history = []
+        cl.user_session.set("chat_history", chat_history)
+    return chat_history
 
-    message_history = cl.user_session.get("message_history")
-    if message_history is None:
-        message_history = []
-        cl.user_session.set("message_history", message_history)
-
-    message = f"You are a professor that will {final}"
-    message = HumanMessage(content=message)
-
-    message_history.append(message) if len(message_history) == 0 else message_history.insert(0, message)
 
 
 
@@ -151,7 +143,7 @@ async def create_settings():
     #     "gemma3:4b",
     #     "gemma3:1b",
     # ]
-    MODELS_LIST = [
+    MODELS_LIST = [ #! TEST IF 12B GIVES THE SAME PERFORMANCE (IF SO, USE IT. IT SHOULD BE FASTER)
         "gemma3:27b-it-qat",
         "gemma3:12b-it-qat",
         "gemma3:4b-it-qat",
@@ -167,12 +159,6 @@ async def create_settings():
                 label="Model",
                 values=MODELS_LIST,
                 initial_index=0
-            ),
-            Select(
-                id="Role",
-                label="Role",
-                values=["Explain/Summarize", "Questionnaire"],
-                initial_index=0,
             ),
             Switch(id="Streaming", label="Stream Tokens", initial=True),
             Slider(
