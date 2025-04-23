@@ -137,13 +137,7 @@ async def send_message(text: str) -> None:
 
 
 async def create_settings():
-    # MODELS_LIST = [
-    #     "gemma3:27b",
-    #     "gemma3:12b",
-    #     "gemma3:4b",
-    #     "gemma3:1b",
-    # ]
-    MODELS_LIST = [ #! TEST IF 12B GIVES THE SAME PERFORMANCE (IF SO, USE IT. IT SHOULD BE FASTER)
+    MODELS_LIST = [
         "gemma3:27b-it-qat",
         "gemma3:12b-it-qat",
         "gemma3:4b-it-qat",
