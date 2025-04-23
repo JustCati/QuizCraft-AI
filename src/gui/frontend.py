@@ -116,7 +116,7 @@ async def main(message: cl.Message):
         chat_history = get_chat_history()
 
         if len(chat_history) > 0:
-            user_query = rewrite_query(user_query, chat_history, llm)
+            user_query = await cl.make_async(rewrite_query)(user_query, chat_history, llm)
             print(f"USER QUERY REWRITTEN: {user_query}")
 
         answer = await cl.make_async(summarize)(
