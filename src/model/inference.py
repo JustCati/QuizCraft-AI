@@ -1,6 +1,7 @@
 import os
 import toml
 from PIL import Image
+from tqdm import tqdm
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import HumanMessage
@@ -91,12 +92,12 @@ def extract(llm, dir):
         content_parts.append(text_part)
         return [HumanMessage(content=content_parts)]
 
-    with open(os.path.join("src", "model", "prompts", "ocr.txt"), "r") as f:
+    with open(os.path.join("src", "model", "prompts", "ocr.toml"), "r") as f:
         ocr_prompt = toml.load(f)["prompts"]["system"]
 
     file_extracted_text = ""
     files = sorted(os.listdir(dir))
-    for i, image_file in enumerate(files):
+    for image_file in tqdm((files)):
         image_path = os.path.join(dir, image_file)
         if os.path.isfile(image_path):
             image = Image.open(image_path)
@@ -106,5 +107,4 @@ def extract(llm, dir):
             extracted = chain.invoke({"text": ocr_prompt, "image": image_b64})
             file_extracted_text += extracted
             file_extracted_text += "\n"
-        print(f"Extracted text from {i+1} of {len(files)} images")
     return file_extracted_text
