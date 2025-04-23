@@ -24,4 +24,7 @@
 
         User query: 
         {user_query}
+
+        Output:
+        {rewritten_query}
     '''

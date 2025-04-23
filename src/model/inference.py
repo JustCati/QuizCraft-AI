@@ -1,12 +1,13 @@
 import os
 import toml
 from PIL import Image
+from pydantic import BaseModel, Field
 
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 
 from src.utils.pdf2img2pdf import convert_to_base64
 
@@ -14,15 +15,20 @@ from src.utils.pdf2img2pdf import convert_to_base64
 
 
 def rewrite_query(query, history, llm, history_length = 10):
+    class RewriteOutput(BaseModel):
+        rewritten_query: str = Field(description="Rewritten query based on the user query and conversation history.")
+
     with open(os.path.join("src", "model", "prompts", "chat_history.toml"), "r") as f:
         prompts = toml.load(f)
         system_prompt = prompts["prompts"]["system"]
         user_prompt = prompts["prompts"]["user"]
 
+    parser = JsonOutputParser(pydantic_object=RewriteOutput)
+
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("user", user_prompt)
-    ])
+    ]).partial(rewritten_query=parser.get_format_instructions())
 
     history_string = ""
     for i, message in enumerate(history):
@@ -35,11 +41,11 @@ def rewrite_query(query, history, llm, history_length = 10):
     rewrite_chain = (
         prompt
         | llm
-        | StrOutputParser()
+        | parser
     )
-    return rewrite_chain.invoke({"history": history_string, "user_query": query})
+    return rewrite_chain.invoke({"history": history_string, "user_query": query})["rewritten_query"]
 
-    
+
 
 
 
