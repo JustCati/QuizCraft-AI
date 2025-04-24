@@ -1,7 +1,5 @@
 import os
 import toml
-from PIL import Image
-from tqdm import tqdm
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import HumanMessage
@@ -9,8 +7,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
-
-from src.utils.pdf2img2pdf import convert_to_base64
 
 
 
@@ -72,39 +68,3 @@ def summarize(llm, msg, vector_store):
         | StrOutputParser()
     )
     return rag_chain.invoke(msg)
-
-
-
-def extract(llm, dir):
-    def prompt_func(data):
-        text = data["text"]
-        image = data["image"]
-
-        image_part = {
-            "type": "image_url",
-            "image_url": f"data:image/jpeg;base64,{image}",
-        }
-
-        content_parts = []
-        text_part = {"type": "text", "text": text}
-
-        content_parts.append(image_part)
-        content_parts.append(text_part)
-        return [HumanMessage(content=content_parts)]
-
-    with open(os.path.join("src", "model", "prompts", "ocr.toml"), "r") as f:
-        ocr_prompt = toml.load(f)["prompts"]["system"]
-
-    file_extracted_text = ""
-    files = sorted(os.listdir(dir))
-    for image_file in tqdm((files)):
-        image_path = os.path.join(dir, image_file)
-        if os.path.isfile(image_path):
-            image = Image.open(image_path)
-            image_b64 = convert_to_base64(image)
-
-            chain = prompt_func | llm | StrOutputParser()
-            extracted = chain.invoke({"text": ocr_prompt, "image": image_b64})
-            file_extracted_text += extracted
-            file_extracted_text += "\n"
-    return file_extracted_text
