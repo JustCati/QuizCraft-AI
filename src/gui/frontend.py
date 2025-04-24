@@ -103,9 +103,7 @@ async def main(message: cl.Message):
             if "pdf" in element.mime:
                 await show_update_message(
                     ["Indexing files", "✅ Files processed successfully!"], 
-                    index_files, 
-                    cl.user_session.get("llm"), 
-                    message.elements
+                    element
                 )
             elif "image" in element.mime:
                 with open(element.path, "rb") as f:
