@@ -111,10 +111,13 @@ def summarize(query, llm, vector_store, wrongly_rewritten_query=""):
             ("user", user_prompt),
         ])
 
+    context = format_docs(retriever.invoke(query))
     rag_chain = (
-        {"context": retriever | format_docs, "query": RunnablePassthrough(), "wrong_output": RunnablePassthrough()}
-        | prompt
+        prompt
         | llm
         | StrOutputParser()
     )
-    return rag_chain.invoke(query, rewritten_query=wrongly_rewritten_query)
+
+    return rag_chain.invoke({"context": context,
+                             "query": query,
+                             "wrong_output": wrongly_rewritten_query})
