@@ -17,13 +17,9 @@ warnings.filterwarnings("ignore")
 
 
 
-async def index_files(llm, uploaded):
-    llm = cl.user_session.get("llm")
+async def index_files(uploaded):
     vector_store: VectorStore = cl.user_session.get("vector_store")
-    # extracted_text = await cl.make_async(extract_text)(llm, uploaded)
-    with open("extracted.txt", "r") as f:
-        extracted_text = f.read()
-    extracted_text = [extracted_text]
+    extracted_text, images = await cl.make_async(extract_text)(uploaded) # TODO: index images
     await cl.make_async(vector_store.add)(extracted_text)
 
 
@@ -87,7 +83,6 @@ async def main():
         await show_update_message(
             ["Indexing files", "✅ Files processed successfully!"], 
             index_files, 
-            cl.user_session.get("llm"), 
             uploaded
         )
     await send_message("CIAO! Sono pronto ad aiutarti. Puoi farmi qualsiasi domanda o richiedere un riepilogo dei file indicizzati. Se vuoi indicizzare nuovi file, basta che alleghi il pdf al messaggio.")
@@ -99,15 +94,21 @@ async def main(message: cl.Message):
     vector_store: VectorStore = cl.user_session.get("vector_store")
 
     if len(message.elements) > 0:
-        for element in message.elements:
-            if "pdf" in element.mime:
-                await show_update_message(
-                    ["Indexing files", "✅ Files processed successfully!"], 
-                    element
-                )
-            elif "image" in element.mime:
-                with open(element.path, "rb") as f:
-                    img_data = base64.b64encode(f.read()).decode("utf-8")
+        files_to_index = [element for element in message.elements if "pdf" in element.mime]
+        images_to_index = [element for element in message.elements if "image" in element.mime]
+
+        if len(files_to_index) > 0:
+            await show_update_message(
+                        ["Indexing files", "✅ Files processed successfully!"], 
+                        index_files,
+                        files_to_index
+                    )
+
+        if len(images_to_index) > 0:
+                pass
+                # img_data = base64.b64encode(f.read()).decode("utf-8")
+                # TODO: use image to query vector store
+
 
     if len(message.content) > 0:
         user_query = message.content
