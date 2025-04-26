@@ -40,9 +40,30 @@ def rewrite_query(query, history, llm, history_length = 10):
         | llm
         | parser
     )
-    return rewrite_chain.invoke({"history": history_string, "user_query": query})["rewritten_query"]
 
 
+def classify_language(llm, msg):
+    class LanguageOutput(BaseModel):
+        language: str = Field(description="Language of the input text.")
+
+    with open(os.path.join("src", "model", "prompts", "language_classification.toml"), "r") as f:
+        prompts = toml.load(f)
+        system_prompt = prompts["prompts"]["system"]
+        user_prompt = prompts["prompts"]["user"]
+
+    parser = JsonOutputParser(pydantic_object=LanguageOutput)
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("user", user_prompt)
+    ]).partial(language=parser.get_format_instructions())
+
+    classification_chain = (
+        prompt
+        | llm
+        | parser
+    )
+    return classification_chain.invoke({"text": msg})["language"]
 
 
 
