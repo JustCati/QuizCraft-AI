@@ -14,6 +14,7 @@
             1. Rewrite the user query only if the user is referring to past messages. Do not rewrite if the query is self-contained or referring to new context. If the query doesn't require any rewriting, output the user query AS IS, without any modifications.
             2. Retain the original intent of the user's query.
             3. Incorporate necessary context from past messages to disambiguate or refine the request. Be concise and well-formed, think about optimizing retrieval in a vector store. 
+            4. The user query is written in italian. Reformulate the query in italian, maintaining the same language.
     '''
 
     user = '''
