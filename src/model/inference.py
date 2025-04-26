@@ -12,9 +12,7 @@ from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 
 def ensure_language_consistency(func):
     def wrapper(query, llm, *args, **kwargs):
-        print(type(query))
         wrong_query = kwargs.pop("wrongly_rewritten_query", "")
-        print(kwargs)
 
         MAX_RETRIES = 3
         origin_language = classify_language(llm, query).lower()
