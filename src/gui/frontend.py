@@ -85,7 +85,7 @@ async def main():
             index_files, 
             uploaded
         )
-    await send_message("CIAO! Sono pronto ad aiutarti. Puoi farmi qualsiasi domanda o richiedere un riepilogo dei file indicizzati. Se vuoi indicizzare nuovi file, basta che alleghi il pdf al messaggio.")
+    await send_message("CIAO! Puoi farmi qualsiasi domanda riguardo i file indicizzati. Se vuoi indicizzare nuovi file, basta che alleghi il pdf al messaggio.")
 
 
 @cl.on_message
