@@ -115,13 +115,15 @@ async def main(message: cl.Message):
         chat_history = get_chat_history()
 
         if len(chat_history) > 0:
-            user_query = await cl.make_async(rewrite_query)(user_query, chat_history, llm)
+            user_query = await cl.make_async(rewrite_query)(query=user_query,
+                                                            llm=llm,
+                                                            history=chat_history)
             print(f"USER QUERY REWRITTEN: {user_query}")
 
         answer = await cl.make_async(summarize)(
-            llm,
-            user_query,
-            vector_store,
+            query=user_query,
+            llm=llm,
+            vector_store=vector_store,
         )
 
         chat_history.append(HumanMessage(content=message.content))
