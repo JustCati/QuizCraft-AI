@@ -15,31 +15,30 @@ def rewrite_query(query, history, llm, history_length = 10):
     class RewriteOutput(BaseModel):
         rewritten_query: str = Field(description="Rewritten query based on the user query and conversation history.")
 
-    with open(os.path.join("src", "model", "prompts", "chat_history.toml"), "r") as f:
+
+def classify_language(llm, msg):
+    class LanguageOutput(BaseModel):
+        language: str = Field(description="Language of the input text.")
+
+    with open(os.path.join("src", "model", "prompts", "language_classification.toml"), "r") as f:
         prompts = toml.load(f)
         system_prompt = prompts["prompts"]["system"]
         user_prompt = prompts["prompts"]["user"]
 
-    parser = JsonOutputParser(pydantic_object=RewriteOutput)
+    parser = JsonOutputParser(pydantic_object=LanguageOutput)
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("user", user_prompt)
-    ]).partial(rewritten_query=parser.get_format_instructions())
+    ]).partial(language=parser.get_format_instructions())
 
-    history_string = ""
-    for i, message in enumerate(history):
-        if i <= history_length:
-            if isinstance(message, AIMessage):
-                history_string += f"Assistant: {message.content}\n"
-            if isinstance(message, HumanMessage):
-                history_string += f"User: {message.content}\n"
-
-    rewrite_chain = (
+    classification_chain = (
         prompt
         | llm
         | parser
     )
+    return classification_chain.invoke({"text": msg})["language"]
+
 
 
 def classify_language(llm, msg):
