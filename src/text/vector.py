@@ -12,7 +12,7 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 
 class VectorStore():
-    def __init__(self, embed_model, threshold=0.9):
+    def __init__(self, embed_model, threshold=0.5):
         self.threshold = threshold
         self.embed_model = embed_model
         
@@ -76,14 +76,15 @@ class VectorStore():
         )
         most_similar_img_score = most_similar_img_score[0][1] if len(most_similar_img_score) > 0 else 0.0
         
-        if most_similar_img_score < self.threshold:
+        img_hash = self.__calculate_hash(image)
+        if  not self.vector_store.get_by_ids([img_hash]) or most_similar_img_score < self.threshold:
             self.vector_store.add_images(
                 [image],
                 metadatas=[{"type": "image"}],
-                ids=[self.__calculate_hash(image)],
+                ids=[img_hash],
             )
         else:
-            print(f"Found similar image with score {most_similar_img_score}, skipping indexing.")
+            print(f"Found similar or equal image with score {most_similar_img_score} and hash {img_hash}, skipping indexing.")
 
 
     def add(self, texts, images=None):
