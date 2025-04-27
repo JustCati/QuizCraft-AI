@@ -39,15 +39,34 @@ def extract_from_pdf(file):
     pipe = infer_result.pipe_ocr_mode if ocr else infer_result.pipe_txt_mode
     pipe_result = pipe(image_writer)
 
+    content = pipe_result.get_content_list(image_dir)
+    page_count = max([int(elem["page_idx"]) for elem in content])
+
+    pages_text = [""] * page_count
+    for elem in content:
+        page_idx = int(elem["page_idx"]) - 1
+        if elem["type"] == "text":
+            pages_text[page_idx] += elem["text"]
+
+    images = []
+    for elem in content:
+        if elem["type"] == "image":
+            image_path = os.path.join(os.path.dirname(local_image_dir), elem["img_path"])
+            if os.path.exists(image_path):
+                with open(image_path, "rb") as img_file:
+                    data = base64.b64encode(img_file.read()).decode("utf-8")
+                    
+            caption = elem["caption"] if len(elem["img_caption"]) != 0 else pages_text[int(elem["page_idx"]) - 1]
+            
+            images.append({
+                "image": data,
+                "caption": caption
+            })
+
     md_content = pipe_result.get_markdown(image_dir)
     pipe_result.dump_md(md_writer, f"{name_without_suff}.md", image_dir)
     with open(os.path.join(local_md_dir, f"{name_without_suff}.md"), "r") as f:
         md_content = f.read()
-
-    images = []
-    for image in os.listdir(local_image_dir):
-        if image.endswith(".jpg") or image.endswith(".png"):
-            images.append(base64.b64encode(open(os.path.join(local_image_dir, image), "rb").read()).decode("utf-8"))
 
     tmp_dir.cleanup()
     if img_dir:

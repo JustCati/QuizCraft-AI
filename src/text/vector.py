@@ -68,7 +68,7 @@ class VectorStore():
                 print(f"Document with hash {chunk_hash} already exists in the vector store.")
 
 
-    def __index_image(self, image):
+    def __index_image(self, image, caption=""):
         most_similar_img_score = self.vector_store.similarity_search_by_image_with_relevance_score(
             image,
             k=1,
@@ -77,10 +77,13 @@ class VectorStore():
         most_similar_img_score = most_similar_img_score[0][1] if len(most_similar_img_score) > 0 else 0.0
         
         img_hash = self.__calculate_hash(image)
-        if  not self.vector_store.get_by_ids([img_hash]) or most_similar_img_score < self.threshold:
+        if not self.vector_store.get_by_ids([img_hash]) or most_similar_img_score < self.threshold:
             self.vector_store.add_images(
                 [image],
-                metadatas=[{"type": "image"}],
+                metadatas=[{
+                    "type": "image",
+                    "img_caption": caption,
+                    }],
                 ids=[img_hash],
             )
         else:
@@ -99,9 +102,12 @@ class VectorStore():
         if len(images) > 0:
             tempfile = TemporaryDirectory()
             for image in images:
-                image = Image.open(BytesIO(base64.b64decode(image)))
+                data = image["image"]
+                caption = image["caption"]
+                
+                image = Image.open(BytesIO(base64.b64decode(data)))
                 image.save(f"{tempfile.name}/image.jpg")
-                self.__index_image(f"{tempfile.name}/image.jpg")
+                self.__index_image(f"{tempfile.name}/image.jpg", caption)
             tempfile.cleanup()
         print("Files indexed.")
 
