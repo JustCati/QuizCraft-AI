@@ -1,7 +1,7 @@
 import os
 import base64
-from tempfile import TemporaryDirectory
 import chainlit as cl
+from tempfile import TemporaryDirectory
 
 from magic_pdf.data.dataset import PymuDocDataset
 from magic_pdf.config.enums import SupportedPdfParseMethod
