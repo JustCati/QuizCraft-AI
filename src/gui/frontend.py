@@ -98,11 +98,7 @@ async def main(message: cl.Message):
         images_to_index = [element for element in message.elements if "image" in element.mime]
 
         if len(files_to_index) > 0:
-            await show_update_message(
-                        ["Indexing files", "✅ Files processed successfully!"], 
-                        index_files,
-                        files_to_index
-                    )
+            await index_files(files_to_index)
 
         if len(images_to_index) > 0:
                 pass
