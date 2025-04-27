@@ -90,20 +90,24 @@ async def main():
 
 @cl.on_message
 async def main(message: cl.Message):
+    image = None
     llm: OllamaLanguageModel = cl.user_session.get("llm")
     vector_store: VectorStore = cl.user_session.get("vector_store")
 
     if len(message.elements) > 0:
         files_to_index = [element for element in message.elements if "pdf" in element.mime]
-        images_to_index = [element for element in message.elements if "image" in element.mime]
+        images = [element for element in message.elements if "image" in element.mime]
 
         if len(files_to_index) > 0:
             await index_files(files_to_index)
 
-        if len(images_to_index) > 0:
-                pass
-                # img_data = base64.b64encode(f.read()).decode("utf-8")
-                # TODO: use image to query vector store
+        if len(images) > 0:
+            if len(images) > 1:
+                await send_message("Please upload only one image at a time.")
+                return
+            for elem in images: # Always one, but for consistency
+                with open(elem.path, "rb") as f:
+                    image = base64.b64encode(f.read()).decode("utf-8")
 
 
     if len(message.content) > 0:
@@ -120,6 +124,7 @@ async def main(message: cl.Message):
             query=user_query,
             llm=llm,
             vector_store=vector_store,
+            image=image
         )
 
         chat_history.append(HumanMessage(content=message.content))
