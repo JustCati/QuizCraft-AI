@@ -138,13 +138,14 @@ def summarize(query, llm, vector_store, image=None, wrongly_rewritten_query=""):
             filter={"type": "image"},
         )
         
-        if len(most_similar_image) > 0:
+        caption = ""
+        if len(most_similar_image) > 0 and most_similar_image[0][1] > 0.4: #* FIXED THRESHOLD OF 0.4
             most_similar_image = most_similar_image[0][0]
             caption = most_similar_image.metadata["img_caption"]
 
     context = format_docs(retriever.invoke(query))
     if image is not None:
-        context = f"MOST SIMILAR IMAGE CAPTION: {caption}\n\n{context}"
+        context = f"IMAGE CAPTION: {caption}\n\n{context}"
     
     rag_chain = (
         prompt
