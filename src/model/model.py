@@ -1,5 +1,8 @@
+import torch
 import subprocess
+import numpy as np
 from PIL import Image
+import torch.nn.functional as F
 from langchain_ollama import ChatOllama
 from langchain_core.embeddings import Embeddings
 from sentence_transformers import SentenceTransformer
@@ -101,9 +104,21 @@ class MultiModalEmbeddingModel(Embeddings):
         return embedding
 
 
-    def embed_image(self, images):
-        pass
+    def embed_image(self, uris):
+        images = uris
+        images = [images] if isinstance(images, str) else images
 
+        embeddings = []
+        for image in images:
+            image = Image.open(image)
 
-    def embed_text_query(self, query):
-        pass
+            inputs = self.vis_processor(image, return_tensors="pt")
+            inputs = {k: v.to("cuda") for k, v in inputs.items() if isinstance(v, torch.Tensor)}
+            with torch.no_grad():
+                img_emb = self.vis_model(**inputs).last_hidden_state
+            img_embeddings = F.normalize(img_emb[:, 0], p=2, dim=1)
+            img_embeddings = img_embeddings.cpu().numpy()
+            img_embeddings = img_embeddings.squeeze(0)
+            embeddings.append(img_embeddings) 
+            
+        return embeddings
