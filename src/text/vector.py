@@ -76,7 +76,8 @@ class VectorStore():
         )
         most_similar_img_score = most_similar_img_score[0][1] if len(most_similar_img_score) > 0 else 0.0
         
-        img_hash = self.__calculate_hash(image)
+        image_data = base64.b64encode(open(image, "rb").read()).decode("utf-8")
+        img_hash = self.__calculate_hash(image_data)
         if not self.vector_store.get_by_ids([img_hash]) or most_similar_img_score < self.threshold:
             self.vector_store.add_images(
                 [image],
