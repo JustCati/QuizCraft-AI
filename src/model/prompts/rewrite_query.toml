@@ -12,10 +12,11 @@
 
         # Instructions
 
-            1. Rewrite the user query only if the user is referring to past messages. Do not rewrite if the query is self-contained or referring to new context. If the query doesn't require any rewriting, output the user query AS IS, without any modifications.
-            2. Retain the original intent of the user's query.
-            3. Incorporate necessary context from past messages to disambiguate or refine the request. Be concise and well-formed, think about optimizing retrieval in a vector store. 
-            4. Use the same language as the user query.
+            1. Rewrite the user query only if the user is referring to past messages. Do not rewrite if the query is self-contained or referring to new context. If the query doesn't require any rewriting, output the user query AS IS, without any modifications. 
+            2. Rewrite the user query only if the user is referring to past messages. Do not rewrite if the query is referring to some attached image or is asking to explain the image content itself. 
+            3. Retain the original intent of the user's query.
+            4. Incorporate necessary context from past messages to disambiguate or refine the request. Be concise and well-formed, think about optimizing retrieval in a vector store. 
+            5. Use the same language as the user query.
     '''
 
     user = '''
