@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 async def index_files(uploaded):
     vector_store: VectorStore = cl.user_session.get("vector_store")
     extracted_text, images = await cl.make_async(extract_text)(uploaded) # TODO: index images
-    await cl.make_async(vector_store.add)(extracted_text)
+    await cl.make_async(vector_store.add)(extracted_text, images)
 
 
 async def init_vector_store():
