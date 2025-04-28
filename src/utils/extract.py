@@ -56,7 +56,7 @@ def extract_from_pdf(file):
                 with open(image_path, "rb") as img_file:
                     data = base64.b64encode(img_file.read()).decode("utf-8")
                     
-            caption = elem["caption"] if len(elem["img_caption"]) != 0 else pages_text[int(elem["page_idx"]) - 1]
+            caption = elem["img_caption"] if len(elem["img_caption"]) != 0 else pages_text[int(elem["page_idx"]) - 1]
             
             images.append({
                 "image": data,
