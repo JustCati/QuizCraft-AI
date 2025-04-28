@@ -7,7 +7,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from src.gui.utils import *
 from src.text.vector import VectorStore
 from src.utils.extract import extract_text
-from src.model.model import OllamaLanguageModel
 from src.model.inference import summarize, rewrite_query
 from langchain_core.messages import HumanMessage, AIMessage
 
@@ -19,7 +18,7 @@ warnings.filterwarnings("ignore")
 
 async def index_files(uploaded):
     vector_store: VectorStore = cl.user_session.get("vector_store")
-    extracted_text, images = await cl.make_async(extract_text)(uploaded) # TODO: index images
+    extracted_text, images = await cl.make_async(extract_text)(uploaded)
     await cl.make_async(vector_store.add)(extracted_text, images)
 
 
@@ -91,8 +90,8 @@ async def main():
 @cl.on_message
 async def main(message: cl.Message):
     image = None
-    llm: OllamaLanguageModel = cl.user_session.get("llm")
-    vector_store: VectorStore = cl.user_session.get("vector_store")
+    llm = cl.user_session.get("llm")
+    vector_store = cl.user_session.get("vector_store")
 
     if len(message.elements) > 0:
         files_to_index = [element for element in message.elements if "pdf" in element.mime]
