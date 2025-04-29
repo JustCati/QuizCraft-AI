@@ -4,7 +4,6 @@ import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
 from src.text.vector import VectorStore
-from langchain_core.messages import HumanMessage, AIMessage
 from src.model.model import MultiModalEmbeddingModel, OllamaLanguageModel
 
 
