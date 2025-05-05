@@ -2,6 +2,8 @@ import os
 import re
 import json
 import argparse
+from io import StringIO
+from hashlib import sha256
 
 from src.utils.extract import extract_from_pdf
 from src.utils.regex import remove_images, remove_links
@@ -11,6 +13,20 @@ from pydantic import BaseModel, Field
 from src.model.model import OllamaLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+
+
+
+
+def calculate_hash(text):
+    BUFFERSIZE = 65536
+    hasher = sha256()
+
+    with StringIO(text) as f:
+        buffer = f.read(BUFFERSIZE)
+        while len(buffer) > 0:
+            hasher.update(buffer.encode())
+            buffer = f.read(BUFFERSIZE)
+    return hasher.hexdigest()
 
 
 
@@ -78,6 +94,7 @@ def generate_chunks(args):
                 
                 data = {
                     "content": chunk.page_content,
+                    "hash": calculate_hash(chunk.page_content),
                     "query": ""
                 }
                 dataset_dict[i] = data
