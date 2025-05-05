@@ -181,6 +181,6 @@ if __name__ == "__main__":
     parser.add_argument("--output_path", type=str, required=True, help="Path to the output directory for text files.")
     args = parser.parse_args()
     
-    # extract_text(args)
+    extract_text(args)
     generate_chunks(args)
     generate_queries(args)
