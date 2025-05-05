@@ -71,7 +71,6 @@ def generate_chunks(args):
         strip_headers=False
         )
 
-    i = 0
     dataset_dict = dict()
     for file in os.listdir(input_path):
         if file.endswith(".md"):
@@ -91,14 +90,17 @@ def generate_chunks(args):
 
                 if len(chunk.page_content) < 100:
                     continue
+
+                hash = calculate_hash(chunk.page_content)
+                if hash in dataset_dict:
+                    print(f"Duplicate chunk found: {hash}. Skipping.")
+                    continue
                 
                 data = {
                     "content": chunk.page_content,
-                    "hash": calculate_hash(chunk.page_content),
                     "query": ""
                 }
-                dataset_dict[i] = data
-                i += 1
+                dataset_dict[hash] = data
 
     with open(os.path.join(output_path, "dataset.json"), "w") as f:
         json.dump(dataset_dict, f, indent=4)
