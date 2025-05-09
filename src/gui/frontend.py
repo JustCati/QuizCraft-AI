@@ -64,6 +64,11 @@ async def main():
             "id": "img_search",
             "icon": "image", 
             "description": "Mostra le immagini per avere una spiegazione specifica.",
+        },
+        {
+            "id": "questionnaire",
+            "icon": "question", 
+            "description": "Genera un questionario basato sui file indicizzati.",
         }
     ])
 
