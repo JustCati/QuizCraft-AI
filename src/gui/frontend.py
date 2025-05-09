@@ -63,11 +63,11 @@ async def main():
         {
             "id": "img_search",
             "icon": "image", 
-            "description": "Mostra le immagini per avere una spiegazione specifica.",
+            "description": "Mosta le immagini salvate. ",
         },
         {
             "id": "questionnaire",
-            "icon": "message-circle-question", 
+            "icon": "question", 
             "description": "Genera un questionario basato sui file indicizzati.",
         }
     ])
@@ -114,22 +114,10 @@ async def main(message: cl.Message):
         ]
         
         await cl.Message(
-            content="Queste sono le immagini salvate. Seleziona un'immagine per avere una spiegazione specifica.",
+            content="Queste sono le immagini salvate.",
             elements=saved_images,
         ).send()
-
-        res = await cl.AskActionMessage(
-            content="",
-            actions=[
-                cl.Action(
-                    name=str(idx),
-                    payload={"value": str(idx), "path": elem.path},
-                    icon="image",
-                    label=str(idx + 1),
-                )
-                for idx, elem in enumerate(saved_images)
-            ],
-        ).send()
+        return
 
     if len(message.elements) > 0:
         files_to_index = [element for element in message.elements if "pdf" in element.mime]
@@ -161,7 +149,6 @@ async def main(message: cl.Message):
             query=user_query,
             llm=llm,
             vector_store=vector_store,
-            image=image
         )
 
         chat_history.append(HumanMessage(content=message.content))
