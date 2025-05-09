@@ -1,3 +1,4 @@
+import os
 import shutil
 import base64
 from PIL import Image
@@ -6,8 +7,11 @@ from io import StringIO
 from hashlib import sha256
 from tempfile import TemporaryDirectory
 
+import chainlit as cl
 from langchain_chroma import Chroma
 from langchain_text_splitters import MarkdownHeaderTextSplitter
+
+from src.model.inference import classify_image
 
 
 
@@ -29,6 +33,10 @@ class VectorStore():
             persist_directory="data",
             collection_name="documents",
         )
+        
+        self.img_dir = os.path.join("data", "images")
+        os.makedirs(self.img_dir, exist_ok=True)
+        cl.user_session.set("img_dir", self.img_dir)
 
 
     def clean(self):
@@ -78,6 +86,11 @@ class VectorStore():
         
         image_data = base64.b64encode(open(image, "rb").read()).decode("utf-8")
         img_hash = self.__calculate_hash(image_data)
+    
+        if not classify_image(cl.user_session.get("llm"), image):
+            print(f"Image {image} is not a valid image.")
+            return
+
         if not self.vector_store.get_by_ids([img_hash]) or most_similar_img_score < self.threshold:
             self.vector_store.add_images(
                 [image],
@@ -87,6 +100,9 @@ class VectorStore():
                     }],
                 ids=[img_hash],
             )
+            with open(image, "rb") as fp:
+                img_to_save = Image.open(fp)
+                img_to_save.save(os.path.join(self.img_dir, f"{img_hash}.jpg"))
         else:
             print(f"Found similar or equal image with score {most_similar_img_score} and hash {img_hash}, skipping indexing.")
 

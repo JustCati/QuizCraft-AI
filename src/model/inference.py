@@ -32,6 +32,56 @@ def ensure_language_consistency(func):
 
 
 
+def classify_image(llm, image):
+    class ImageOutput(BaseModel):
+        is_valid: str = Field(description="Image classification result.")
+
+    with open(os.path.join("src", "model", "prompts", "image_classification.toml"), "r") as f:
+        prompts = toml.load(f)
+        system_prompt = prompts["prompts"]["system"]
+        user_prompt = prompts["prompts"]["user"]
+        
+
+    parser = JsonOutputParser(pydantic_object=ImageOutput)
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("user", [
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,{image_data}"},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,{wrong_empty}"},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,{wrong_text}"},
+            },
+            {
+                "type": "text",
+                "text": user_prompt,
+            },
+        ]),
+    ]).partial(is_valid=parser.get_format_instructions())
+
+    with open(os.path.join("src", "model", "prompts", "wrong_empty.jpg"), "rb") as f:
+        wrong_empty = base64.b64encode(f.read()).decode("utf-8")
+    with open(os.path.join("src", "model", "prompts", "wrong_text.jpg"), "rb") as f:
+        wrong_text = base64.b64encode(f.read()).decode("utf-8")
+
+    classification_chain = (
+        prompt
+        | llm
+        | parser
+    )
+    res = classification_chain.invoke({"image_data": image,
+                                        "wrong_empty": wrong_empty,
+                                        "wrong_text": wrong_text})["is_valid"]
+    return res.lower() == "yes"
+
+
 def classify_language(llm, msg):
     class LanguageOutput(BaseModel):
         language: str = Field(description="Language of the input text.")
