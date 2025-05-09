@@ -147,7 +147,7 @@ def rewrite_query(query, llm, history, history_length=10, wrongly_rewritten_quer
 
 
 @ensure_language_consistency
-def summarize(query, llm, vector_store, image=None, wrongly_rewritten_query=""):
+def summarize(query, llm, vector_store, wrongly_rewritten_query=""):
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
