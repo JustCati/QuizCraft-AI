@@ -119,13 +119,13 @@ async def main(message: cl.Message):
         ).send()
 
         res = await cl.AskActionMessage(
-            content="Scegli un'immagine!",
+            content="",
             actions=[
                 cl.Action(
                     name=str(idx),
                     payload={"value": str(idx), "path": elem.path},
                     icon="image",
-                    label=str(idx),
+                    label=str(idx + 1),
                 )
                 for idx, elem in enumerate(saved_images)
             ],
