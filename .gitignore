@@ -252,3 +252,4 @@ huggingface_models/*
 .files/*
 chainlit.md
 dataset/*
+.deepeval/*
