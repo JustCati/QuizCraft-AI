@@ -59,6 +59,14 @@ def cleanup(llm = True, vector = False):
 
 @cl.on_chat_start
 async def main():
+    await cl.context.emitter.set_commands([
+        {
+            "id": "img_search",
+            "icon": "image", 
+            "description": "Mostra le immagini per avere una spiegazione specifica.",
+        }
+    ])
+
     settings = await create_settings()
     cl.user_session.set("settings", settings)
 
@@ -92,6 +100,31 @@ async def main(message: cl.Message):
     image = None
     llm = cl.user_session.get("llm")
     vector_store = cl.user_session.get("vector_store")
+
+    if message.command == "img_search":
+        img_dir = cl.user_session.get("img_dir")
+        saved_images = [
+            cl.Image(path=os.path.join(img_dir, image), name=image, display="inline", size="small")
+            for image in os.listdir(img_dir)
+        ]
+        
+        await cl.Message(
+            content="Queste sono le immagini salvate. Seleziona un'immagine per avere una spiegazione specifica.",
+            elements=saved_images,
+        ).send()
+
+        res = await cl.AskActionMessage(
+            content="Scegli un'immagine!",
+            actions=[
+                cl.Action(
+                    name=str(idx),
+                    payload={"value": str(idx), "path": elem.path},
+                    icon="image",
+                    label=str(idx),
+                )
+                for idx, elem in enumerate(saved_images)
+            ],
+        ).send()
 
     if len(message.elements) > 0:
         files_to_index = [element for element in message.elements if "pdf" in element.mime]
