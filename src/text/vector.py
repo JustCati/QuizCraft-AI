@@ -11,6 +11,7 @@ import chainlit as cl
 from langchain_chroma import Chroma
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
+from src.utils.image import resize_to_169
 from src.model.inference import classify_image
 
 
@@ -102,6 +103,7 @@ class VectorStore():
             )
             with open(image, "rb") as fp:
                 img_to_save = Image.open(fp)
+                img_to_save = resize_to_169(img_to_save)
                 img_to_save.save(os.path.join(self.img_dir, f"{img_hash}.jpg"))
         else:
             print(f"Found similar or equal image with score {most_similar_img_score} and hash {img_hash}, skipping indexing.")
