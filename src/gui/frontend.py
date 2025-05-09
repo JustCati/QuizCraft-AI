@@ -67,7 +67,7 @@ async def main():
         },
         {
             "id": "questionnaire",
-            "icon": "question", 
+            "icon": "message-circle-question", 
             "description": "Genera un questionario basato sui file indicizzati.",
         }
     ])
