@@ -151,7 +151,7 @@ def summarize(query, llm, vector_store, image=None, wrongly_rewritten_query=""):
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
-    with open(os.path.join("src", "model", "prompts", "summarize.toml"), "r") as f:
+    with open(os.path.join("src", "model", "prompts", "conversation.toml"), "r") as f:
         prompts = toml.load(f)
         system_prompt = prompts["prompts"]["system"]
         user_prompt = prompts["prompts"]["user"]
@@ -162,52 +162,13 @@ def summarize(query, llm, vector_store, image=None, wrongly_rewritten_query=""):
             ("user", user_prompt),
         ])
 
-    if image is not None:
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("user", [
-                {
-                    "type": "image_url",
-                    "image_url": {"url": "data:image/png;base64,{image_data}"},
-                },
-                {
-                    "type": "text",
-                    "text": user_prompt,
-                },
-            ]),
-        ])
-
-        temp_dir = TemporaryDirectory()
-        image_path = os.path.join(temp_dir.name, "image.png")
-        with open(image_path, "wb") as img_file:
-            img_file.write(base64.b64decode(image))
-        
-        most_similar_image = vector_store.vector_store.similarity_search_by_image_with_relevance_score(
-            image_path,
-            k=1,
-            filter={"type": "image"},
-        )
-        
-        caption = ""
-        if len(most_similar_image) > 0 and most_similar_image[0][1] > 0.4: #* FIXED THRESHOLD OF 0.4
-            most_similar_image = most_similar_image[0][0]
-            caption = most_similar_image.metadata["img_caption"]
-
     context = format_docs(retriever.invoke(query))
-    if image is not None:
-        context = f"IMAGE CAPTION: {caption}\n\n{context}"
     
     rag_chain = (
         prompt
         | llm
         | StrOutputParser()
     )
-
-    if image is not None:
-        return rag_chain.invoke({"context": context,
-                             "query": query,
-                             "wrong_output": wrongly_rewritten_query,
-                             "image_data": image})
 
     return rag_chain.invoke({"context": context,
                              "query": query,
