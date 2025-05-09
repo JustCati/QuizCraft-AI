@@ -123,10 +123,10 @@ async def show_loading_message(text, interval=0.5):
     return msg, stop_event.set
 
 
-async def send_message(text: str) -> None:
+async def send_message(text: str, image=None) -> None:
     stream = cl.user_session.get("stream_tokens")
     if stream:
-        msg = cl.Message(content="")
+        msg = cl.Message(content="", elements=[image] if image else None)
         for token in text:
             await msg.stream_token(token)
     else:

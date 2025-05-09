@@ -131,5 +131,6 @@ class VectorStore():
         print("Files indexed.")
 
 
-    def get_retriever(self):
-        return self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+    def get_retriever(self, filter=None):
+        return self.vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 4,
+                                                                                       "filter": filter})

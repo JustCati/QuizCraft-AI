@@ -147,22 +147,34 @@ def rewrite_query(query, llm, history, history_length=10, wrongly_rewritten_quer
 
 
 @ensure_language_consistency
-def summarize(query, llm, vector_store, wrongly_rewritten_query=""):
+def summarize(query, llm, vector_store, search_image=False, wrongly_rewritten_query=""):
     def format_docs(docs):
-        return "\n\n".join(doc.page_content for doc in docs)
+        context = ""
+        for doc in docs:
+            if doc.metadata.get("type") == "text":
+                context += f"Text: {doc.page_content}\n\n"
+            elif doc.metadata.get("type") == "image":
+                context += f"Image: {doc.metadata.get('img_caption')}\n\n"
+        return context
+
 
     with open(os.path.join("src", "model", "prompts", "conversation.toml"), "r") as f:
         prompts = toml.load(f)
         system_prompt = prompts["prompts"]["system"]
         user_prompt = prompts["prompts"]["user"]
-
-    retriever = vector_store.get_retriever()
+    
     prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", user_prompt),
         ])
 
-    context = format_docs(retriever.invoke(query))
+    filter = {"type": "image" if search_image else "text"}
+    retriever = vector_store.get_retriever(filter=filter)
+    docs = retriever.invoke(query)
+    context = format_docs(docs)
+
+    if search_image:
+        image = docs[0].page_content
     
     rag_chain = (
         prompt
@@ -172,4 +184,4 @@ def summarize(query, llm, vector_store, wrongly_rewritten_query=""):
 
     return rag_chain.invoke({"context": context,
                              "query": query,
-                             "wrong_output": wrongly_rewritten_query})
+                             "wrong_output": wrongly_rewritten_query}), image if search_image else None

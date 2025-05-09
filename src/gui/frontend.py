@@ -2,6 +2,7 @@ import os
 import sys
 import base64
 import chainlit as cl
+from tempfile import TemporaryDirectory
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.gui.utils import *
@@ -63,7 +64,7 @@ async def main():
         {
             "id": "img_search",
             "icon": "image", 
-            "description": "Mosta le immagini salvate. ",
+            "description": "( . ) Mosta le immagini salvate. \n (query) Interroga il modello con una query su un'immagine.",
         },
         {
             "id": "questionnaire",
@@ -106,7 +107,7 @@ async def main(message: cl.Message):
     llm = cl.user_session.get("llm")
     vector_store = cl.user_session.get("vector_store")
 
-    if message.command == "img_search":
+    if message.command == "img_search" and message.content == ".":
         img_dir = cl.user_session.get("img_dir")
         saved_images = [
             cl.Image(path=os.path.join(img_dir, image), name=image, display="inline", size="small")
@@ -145,14 +146,25 @@ async def main(message: cl.Message):
                                                             history=chat_history)
             print(f"USER QUERY REWRITTEN: {user_query}")
 
-        answer = await cl.make_async(summarize)(
+        answer, image = await cl.make_async(summarize)(
             query=user_query,
             llm=llm,
             vector_store=vector_store,
+            search_image=message.command == "img_search",
         )
 
         chat_history.append(HumanMessage(content=message.content))
         chat_history.append(AIMessage(content=answer))
         cl.user_session.set("chat_history", chat_history)
 
-        await send_message(answer)
+        if image is not None:
+            image = base64.b64decode(image)
+            temp_dir = TemporaryDirectory()
+            with open(f"{temp_dir.name}/image.jpg", "wb") as f:
+                f.write(image)
+            image = cl.Image(path=f"{temp_dir.name}/image.jpg", name="image", display="inline", size="medium")
+
+        await send_message(answer, image=image)
+        
+        if image is not None:
+            temp_dir.cleanup()
