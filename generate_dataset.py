@@ -9,11 +9,6 @@ from src.utils.extract import extract_from_pdf
 from src.utils.regex import remove_images, remove_links
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
-from pydantic import BaseModel, Field
-from src.model.model import OllamaLanguageModel
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
-
 
 
 
@@ -104,93 +99,6 @@ def generate_chunks(args):
 
     with open(os.path.join(output_path, "dataset.json"), "w") as f:
         json.dump(dataset_dict, f, indent=4)
-        
-        
-        
-def generate_query(llm, query):
-    system_prompt = '''
-        # Role
-        
-        You are an expert AI capable of generating a query from a a given text chunk. The final goal is to generate the right query so that, if this query is used to search for the text chunk, the text chunk will be retrieved.
-        
-        # Input
-
-            - Chunk: A chunk of text that is a part of a larger document. The chunk may contain multiple paragraphs and it is formatted with markdown headers.
-
-        # Instruction
-        
-            1. Read the chunk carefully.
-            2. Generate a query that is relevant to the content of the chunk.
-            3. The query should be a single sentence that captures the main idea of the chunk.
-            4. Generate the query in italian.
-            5. The query should be in the form of a question.
-            6. If the chunk does not contain any relevant explanation of a concept, generate a query that is a single word that captures the main idea of the chunk.
-    '''
-
-    user_prompt = '''
-        # Input:
-        
-        Chunk:
-        {chunk}
-
-        Output:
-        {generated_query}
-    '''
-
-    class Query(BaseModel):
-        generated_query: str = Field(description="The generated query")
-
-    parser = JsonOutputParser(pydantic_object=Query)
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("user", user_prompt)
-        ]
-    ).partial(generated_query=parser.get_format_instructions())
-
-    chain = (
-        prompt
-        | llm
-        | parser
-    )
-    result = chain.invoke({"chunk": query})["generated_query"]
-    return result
-
-
-
-def generate_queries(args):
-    input_path = args.output_path
-
-    if input_path.endswith("/"):
-        input_path = input_path[:-1]
-    output_path = os.path.dirname(input_path)
-    llm = OllamaLanguageModel("gemma3:27b-it-qat", 0.4).get().model
-    
-    dataset_path = os.path.join(output_path, "dataset_with_query.json")
-    if not os.path.exists(dataset_path):
-        dataset_path = os.path.join(output_path, "dataset.json")
-        if not os.path.exists(dataset_path):
-            print(f"Dataset file not found at {dataset_path}. Please run the chunk generation first.")
-            return
-
-
-    with open(dataset_path, "r") as f:
-        dataset = json.load(f)
-
-    for k, v in dataset.items():
-        chunk = v["content"]
-        query = v["query"]
-
-        if query:
-            print(f"Skipping query generation for chunk {k} as it already has a query.")
-            continue
-        generated_query = generate_query(llm=llm, query=chunk)
-        dataset[k]["query"] = generated_query
-
-        with open(os.path.join(output_path, "dataset_with_query.json"), "w") as f:
-            json.dump(dataset, f, indent=4)
-
 
 
 
@@ -202,4 +110,3 @@ if __name__ == "__main__":
     
     extract_text(args)
     generate_chunks(args)
-    generate_queries(args)
