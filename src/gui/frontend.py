@@ -69,7 +69,7 @@ async def main():
         {
             "id": "questionnaire",
             "icon": "message-circle-question", 
-            "description": "Genera un questionario basato sui file indicizzati.",
+            "description": "Scrivi la materia di cui vuoi generare un questionario.",
         }
     ])
 
@@ -79,6 +79,7 @@ async def main():
     step = [("Creating vector store", init_vector_store)]
     await show_sequential_progress(step)
     await setup_agent(settings)
+    await load_classifier()
 
     vector_store = cl.user_session.get("vector_store")
     if len(vector_store.vector_store.get()["ids"]) == 0:
@@ -145,6 +146,9 @@ async def main(message: cl.Message):
                                                             llm=llm,
                                                             history=chat_history)
             print(f"USER QUERY REWRITTEN: {user_query}")
+
+        if message.command == "questionnaire":
+            user_query = f"Genera un questionario basato sui file indicizzati di {user_query}."
 
         answer, image = await cl.make_async(summarize)(
             query=user_query,

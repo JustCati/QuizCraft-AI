@@ -1,8 +1,8 @@
 import os
 import toml
 import base64
+import chainlit as cl
 from pydantic import BaseModel, Field
-from tempfile import TemporaryDirectory
 
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -16,18 +16,22 @@ def ensure_language_consistency(func):
         wrong_query = kwargs.pop("wrongly_rewritten_query", "")
 
         MAX_RETRIES = 3
-        origin_language = classify_language(llm, query).lower()
+        classifier = cl.user_session.get("language_classifier")
+        origin_language = classifier.classify(query).lower()
 
         for i in range(MAX_RETRIES):
-            rewritten_query = func(query, llm, **kwargs, wrongly_rewritten_query=wrong_query)
-            new_language = classify_language(llm, rewritten_query).lower()
+            output = func(query, llm, **kwargs, wrongly_rewritten_query=wrong_query)
+            
+            rewritten_query = output[0] if isinstance(output, tuple) else output 
+            
+            new_language = classifier.classify(query).lower()
 
             if new_language == origin_language:
-                return rewritten_query
+                return output
 
             wrong_query = rewritten_query
             print(f"Language mismatch detected. Retrying... (Attempt {i + 1}/{MAX_RETRIES})")
-        return rewritten_query
+        return output
     return wrapper
 
 
@@ -80,30 +84,6 @@ def classify_image(llm, image):
                                         "wrong_empty": wrong_empty,
                                         "wrong_text": wrong_text})["is_valid"]
     return res.lower() == "yes"
-
-
-def classify_language(llm, msg):
-    class LanguageOutput(BaseModel):
-        language: str = Field(description="Language of the input text.")
-
-    with open(os.path.join("src", "model", "prompts", "language_classification.toml"), "r") as f:
-        prompts = toml.load(f)
-        system_prompt = prompts["prompts"]["system"]
-        user_prompt = prompts["prompts"]["user"]
-
-    parser = JsonOutputParser(pydantic_object=LanguageOutput)
-
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("user", user_prompt)
-    ]).partial(language=parser.get_format_instructions())
-
-    classification_chain = (
-        prompt
-        | llm
-        | parser
-    )
-    return classification_chain.invoke({"text": msg})["language"]
 
 
 

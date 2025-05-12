@@ -4,7 +4,7 @@ import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
 
 from src.text.vector import VectorStore
-from src.model.model import MultiModalEmbeddingModel, OllamaLanguageModel
+from src.model.model import MultiModalEmbeddingModel, OllamaLanguageModel, LanguageClassifier
 
 
 
@@ -36,6 +36,15 @@ async def create_vector_store() -> VectorStore:
 
 
 
+async def load_classifier():
+    def load_model(model_name):
+        return LanguageClassifier(model_name=model_name, device="cuda")
+
+    classifier = cl.user_session.get("language_classifier")
+    if classifier is None:
+        classifier = await cl.make_async(load_model)("qanastek/51-languages-classifier")
+        cl.user_session.set("language_classifier", classifier)
+    return classifier
 
 
 def load_llm(settings):

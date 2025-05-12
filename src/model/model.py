@@ -7,6 +7,7 @@ from langchain_ollama import ChatOllama
 from langchain_core.embeddings import Embeddings
 from sentence_transformers import SentenceTransformer
 from transformers import AutoModel, AutoImageProcessor
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TextClassificationPipeline
 
 
 class GenericOllamaModel(object):
@@ -122,3 +123,26 @@ class MultiModalEmbeddingModel(Embeddings):
             embeddings.append(img_embeddings) 
             
         return embeddings
+
+
+
+class LanguageClassifier():
+    def __init__(self, model_name="qanastek/51-languages-classifier", device="cuda"):
+        super().__init__()
+        self.model_name = model_name
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, device_map=device)
+        self.classifier = TextClassificationPipeline(model=self.model, tokenizer=self.tokenizer)
+        self.model.eval()
+        
+        self.vocabulary = {
+            "it-IT": "Italian",
+            "en-US": "English",
+        }
+
+
+    def classify(self, text):
+        res = self.classifier(text)
+        lang_key = res[0]['label']
+        lang = self.vocabulary.get(lang_key, "Unknown")
+        return lang
