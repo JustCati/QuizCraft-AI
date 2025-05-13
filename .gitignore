@@ -254,3 +254,5 @@ chainlit.md
 dataset/*
 .deepeval/*
 .env
+eval/*
+*.json
