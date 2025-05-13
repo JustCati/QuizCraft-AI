@@ -19,8 +19,7 @@ from src.model.model import OllamaLanguageModel, LanguageClassifier
 
 
 class VectorStore():
-    def __init__(self, embed_model, threshold=0.5, persist_directory="data"):
-        self.threshold = threshold
+    def __init__(self, embed_model, persist_directory="data"):
         self.embed_model = embed_model
         
         self.splitter = MarkdownHeaderTextSplitter(
