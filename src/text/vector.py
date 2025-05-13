@@ -14,10 +14,12 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter
 from src.utils.image import resize_to_169
 from src.model.inference import classify_image
 
+from src.model.inference import translate
+from src.model.model import OllamaLanguageModel, LanguageClassifier
 
 
 class VectorStore():
-    def __init__(self, embed_model, threshold=0.5):
+    def __init__(self, embed_model, threshold=0.5, persist_directory="data"):
         self.threshold = threshold
         self.embed_model = embed_model
         
@@ -31,9 +33,10 @@ class VectorStore():
 
         self.vector_store = Chroma(
             embedding_function=self.embed_model,
-            persist_directory="data",
+            persist_directory=persist_directory,
             collection_name="documents",
         )
+        self.translator = OllamaLanguageModel("gemma3:27b-it-qat", temperature=0.0).get().model
         
         self.img_dir = os.path.join("data", "images")
         os.makedirs(self.img_dir, exist_ok=True)
@@ -68,8 +71,17 @@ class VectorStore():
 
 
     def __index_text(self, text):
+        language_classifier = cl.user_session.get("language_classifier")
+        if language_classifier is None:
+            language_classifier = LanguageClassifier(model_name="qanastek/51-languages-classifier", device="cuda")
+            cl.user_session.set("language_classifier", language_classifier)
+
         chunks = self.__get_chunks(text)
         for chunk in chunks:
+            if language_classifier.classify(chunk.page_content) != "en":
+                print(f"Text {chunk.page_content} is not in English. Translating.")
+                chunk.page_content = translate(chunk.page_content, self.translator, "it")
+
             chunk_hash = self.__calculate_hash(chunk.page_content)
             if not self.vector_store.get_by_ids([chunk_hash]):
                 self.vector_store.add_documents(

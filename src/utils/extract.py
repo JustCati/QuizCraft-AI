@@ -77,7 +77,7 @@ def extract_from_pdf(file):
 
 
 
-def extract_text(files):
+async def extract_text(files):
     #* Remove LLM from GPU to clean up memory
     llm = cl.user_session.get("llm_ref")
     llm.stop()
@@ -97,5 +97,5 @@ def extract_text(files):
         extracted_images.extend(images)
 
     #* Load LLM back to GPU
-    cl.make_async(load_llm)(cl.user_session.get("settings")) 
+    await cl.make_async(load_llm)(cl.user_session.get("settings"))
     return extracted_text, images

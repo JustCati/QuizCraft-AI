@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 
 async def index_files(uploaded):
     vector_store: VectorStore = cl.user_session.get("vector_store")
-    extracted_text, images = await cl.make_async(extract_text)(uploaded)
+    extracted_text, images = await (await cl.make_async(extract_text)(uploaded))
     await cl.make_async(vector_store.add)(extracted_text, images)
 
 
@@ -79,7 +79,7 @@ async def main():
     step = [("Creating vector store", init_vector_store)]
     await show_sequential_progress(step)
     await setup_agent(settings)
-    await load_classifier()
+    await cl.make_async(load_classifier)()
 
     vector_store = cl.user_session.get("vector_store")
     if len(vector_store.vector_store.get()["ids"]) == 0:

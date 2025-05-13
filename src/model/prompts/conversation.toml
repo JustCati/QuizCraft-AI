@@ -7,14 +7,12 @@
         ## Input:
 
             - Context: Revelevant chunks retrieved from the database of classroom materials.
-            - Optional Wrong Output: An example of a wrong output that should be avoided. This is provided to help you understand what language **NOT** to use.
             - User Query: User question.
 
         ## Instruction:
 
-            1. The retrieved context is written in italian or english. Answer in the same language as the query. 
-            2. Answer only using the provided context. If the context contains sufficient information to answer the query, provide a precise, well-structured response, without referring to general knowledge or external sources.
-            3. If you don't know what to say, just say that you don't know.
+            1. Answer only using the provided context. If the context contains sufficient information to answer the query, provide a precise, well-structured response, without referring to general knowledge or external sources.
+            2. If you don't know what to say, just say that you don't know.
         '''
 
     user = '''
@@ -22,9 +20,6 @@
         
         Context:
         {context}
-
-        Wrong Output:
-        {wrong_output}
         
         User Query:
         {query}

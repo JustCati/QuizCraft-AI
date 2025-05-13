@@ -13,30 +13,6 @@ from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 
 
 
-def ensure_language_consistency(func):
-    def wrapper(query, llm, *args, **kwargs):
-        wrong_query = kwargs.pop("wrongly_rewritten_query", "")
-
-        MAX_RETRIES = 3
-        classifier = cl.user_session.get("language_classifier")
-        origin_language = classifier.classify(query).lower()
-
-        for i in range(MAX_RETRIES):
-            output = func(query, llm, **kwargs, wrongly_rewritten_query=wrong_query)
-            
-            rewritten_query = output[0] if isinstance(output, tuple) else output 
-            
-            new_language = classifier.classify(query).lower()
-
-            if new_language == origin_language:
-                return output
-
-            wrong_query = rewritten_query
-            print(f"Language mismatch detected. Retrying... (Attempt {i + 1}/{MAX_RETRIES})")
-        return output
-    return wrapper
-
-
 
 def classify_image(llm, image):
     class ImageOutput(BaseModel):
@@ -89,8 +65,7 @@ def classify_image(llm, image):
 
 
 
-@ensure_language_consistency
-def rewrite_query(query, llm, history, history_length=10, wrongly_rewritten_query=""):
+def rewrite_query(query, llm, history, history_length=10):
     class RewriteOutput(BaseModel):
         rewritten_query: str = Field(description="Rewritten query based on the user query and conversation history.")
     
@@ -114,21 +89,34 @@ def rewrite_query(query, llm, history, history_length=10, wrongly_rewritten_quer
             if isinstance(message, HumanMessage):
                 history_string += f"User: {message.content}\n"
 
+    language_classifier = cl.user_session.get("language_classifier")
+
     rewrite_chain = (
         prompt
         | llm
         | parser
     )
 
-    return rewrite_chain.invoke({
-        "history": history_string, 
-        "wrongly_rewritten_query": wrongly_rewritten_query,
-        "user_query": query
-    })["rewritten_query"]
+    MAX_TRIES = 3
+    for _ in range(MAX_TRIES):
+        try:
+            rewritten = rewrite_chain.invoke({
+                "history": history_string,
+                "user_query": query
+            })["rewritten_query"]
+            if language_classifier.classify(rewritten) == "it":
+                return rewritten
+            else:
+                print("Rewritten query is not in Italian. Retrying...")
+                continue
+        except Exception as e:
+            print(f"Error during query rewriting: {e}")
+            continue
+    return query
 
 
 
-def translate(query, llm):
+def translate(query, llm, source_language="it"):
         with open(os.path.join("src", "model", "prompts", "translation.toml"), "r") as f:
             prompts = toml.load(f)
             system_prompt = prompts["prompts"]["system"]
@@ -144,12 +132,13 @@ def translate(query, llm):
             | llm
             | StrOutputParser()
         )
+        
+        source_language = "italian" if source_language == "it" else "english"
+        return rag_chain.invoke({"source_text": query,
+                                 "source_language": source_language})
 
-        return rag_chain.invoke({"source_text": query})
 
-
-@ensure_language_consistency
-def summarize(query, llm, vector_store, search_image=False, wrongly_rewritten_query=""):
+def summarize(query, llm, vector_store, search_image=False):
     def format_docs(docs):
         context = ""
         for doc in docs:
@@ -170,6 +159,10 @@ def summarize(query, llm, vector_store, search_image=False, wrongly_rewritten_qu
             ("user", user_prompt),
         ])
 
+    language_classifier = cl.user_session.get("language_classifier")
+    if language_classifier.classify(query) != "en":
+        query = translate(query, llm, "it")
+
     filter = {"type": "image" if search_image else "text"}
     retriever = vector_store.get_retriever(filter=filter)
     docs = retriever.invoke(query)
@@ -184,6 +177,9 @@ def summarize(query, llm, vector_store, search_image=False, wrongly_rewritten_qu
         | StrOutputParser()
     )
 
-    return rag_chain.invoke({"context": context,
-                             "query": query,
-                             "wrong_output": wrongly_rewritten_query}), image if search_image else None
+    answer = rag_chain.invoke({"context": context,
+                             "query": query}), image if search_image else None
+
+    if language_classifier.classify(answer[0]) != "it":
+        translated_answer = translate(answer[0], llm, "en")
+    return translated_answer, answer[1]

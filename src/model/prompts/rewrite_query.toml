@@ -7,7 +7,6 @@
         # Input
 
             - History: A list of messages that represent the conversation history. Each message has a role (user or assistant) and content.
-            - Wrongly rewritten query [**OPTIONAL**]: If provided, a user query that has been rewritten with the wrong language. This is provided to help you understand what language **NOT** to use.
             - User query: A user query that needs to be rewritten so that it includes relevant context from the conversation history.
 
         # Instructions
@@ -16,7 +15,7 @@
             2. Rewrite the user query only if the user is referring to past messages. Do not rewrite if the query is referring to some attached image or is asking to explain the image content itself. 
             3. Retain the original intent of the user's query.
             4. Incorporate necessary context from past messages to disambiguate or refine the request. Be concise and well-formed, think about optimizing retrieval in a vector store. 
-            5. Use the same language as the user query.
+            5. Rewrite the user query in Italian.
     '''
 
     user = '''
@@ -24,9 +23,6 @@
 
         Conversation history:
         {history}
-
-        Wrongly rewritten query:
-        {wrongly_rewritten_query}
 
         User query: 
         {user_query}
