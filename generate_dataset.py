@@ -19,7 +19,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from src.model.model import OllamaLanguageModel, LanguageClassifier
 
-from langchain_core.prompts import ChatPromptTemplate
+from src.model.inference import translate
 from langchain_core.output_parsers import StrOutputParser
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -51,45 +51,6 @@ class SynthetizerModel(DeepEvalBaseLLM):
     async def a_generate(self, prompt):
         model = self.load_model()
         return await model.invoke(prompt)
-
-
-
-def translate(query, llm):
-        system_prompt = '''
-            # Role
-            
-            You are an expert translator. Your task is to translate the text from English to Italian.
-            
-            # Input
-            
-                1. Qeury: english text to be translated.
-                
-            # Instructions
-            
-                1. Translate the text from English to Italian.
-                2. Do not include any additional information or context.
-                3. Do not hallucinate
-        '''
-
-        user_prompt = '''
-            # Input
-            
-            Query:
-            {query}
-        '''
-        
-        prompt = ChatPromptTemplate.from_messages([
-                ("system", system_prompt),
-                ("user", user_prompt),
-            ])
-        
-        rag_chain = (
-            prompt
-            | llm
-            | StrOutputParser()
-        )
-
-        return rag_chain.invoke({"query": query})
 
 
 def calculate_hash(text):
@@ -214,7 +175,7 @@ def generate_queries_goldens(args):
 
     styling_config = StylingConfig(
         input_format="Extracted text from university course slides written in Italian or English.",
-        task="Generate a question that a student might ask about the text, in Italian. Do not include the answer. Do not be too specific. Do not cite the text verbatim, paraphrase when possible. Generate the question in Italian.",
+        task="Generate a question that a student might ask about the text, in English. Do not cite the text verbatim, paraphrase when possible. Generate the question in English.",
         scenario="A student is preparing for an exam and wants to test their understanding of the material or want an explanation of the content.",
     )
     synthesizer = Synthesizer(model=model, 
@@ -245,10 +206,10 @@ def generate_queries_goldens(args):
         input = res.input
         expected_output = res.expected_output
 
-        if language_classifier.classify(input).lower() == "english":
+        if language_classifier.classify(input).lower() != "english":
             input = translate(input, local_model)
 
-        if language_classifier.classify(expected_output).lower() == "english":
+        if language_classifier.classify(expected_output).lower() != "english":
             expected_output = translate(expected_output, local_model)
 
         data[key] = {
