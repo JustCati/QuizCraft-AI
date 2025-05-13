@@ -83,11 +83,10 @@ class VectorStore():
 
         chunks = self.__get_chunks(text)
         for chunk in chunks:
-            if language_classifier.classify(chunk.page_content) != "en":
-                chunk.page_content = translate(chunk.page_content, self.translator, "it")
-
             chunk_hash = self.__calculate_hash(chunk.page_content)
             if not self.vector_store.get_by_ids([chunk_hash]):
+                if language_classifier.classify(chunk.page_content) != "en":
+                    chunk.page_content = translate(chunk.page_content, self.translator, "it")
                 self.vector_store.add_documents(
                     [chunk],
                     ids=[chunk_hash],
