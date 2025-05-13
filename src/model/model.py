@@ -136,12 +136,15 @@ class LanguageClassifier():
         self.model.eval()
         
         self.vocabulary = {
-            "it-IT": "italian",
-            "en-US": "english",
+            "it-IT": "it",
+            "en-US": "en",
         }
 
 
     def classify(self, text):
+        if len(text) > 512:
+            text = text[:512]
+
         res = self.classifier(text)
         lang_key = res[0]['label']
         lang = self.vocabulary.get(lang_key, "Unknown")
