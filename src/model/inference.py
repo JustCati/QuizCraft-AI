@@ -117,30 +117,26 @@ def rewrite_query(query, llm, history, history_length=10):
 
 
 def translate(query, llm, source_language="it"):
-    class Translated(BaseModel):
-        translated_content: str = Field(description="Translated query.")
-    
     with open(os.path.join("src", "model", "prompts", "translation.toml"), "r") as f:
         prompts = toml.load(f)
         system_prompt = prompts["prompts"]["system"]
         user_prompt = prompts["prompts"]["user"]
     
-    parser = JsonOutputParser(pydantic_object=Translated)
-    
     prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", user_prompt),
-    ]).partial(translated_content=parser.get_format_instructions())
+    ])
     
     rag_chain = (
         prompt
         | llm
-        | parser
+        | StrOutputParser()
     )
     
     source_language = "italian" if source_language == "it" else "english"
-    return rag_chain.invoke({"source_text": query,
-                                "source_language": source_language})["translated_content"]
+    translated = rag_chain.invoke({"source_text": query,
+                                "source_language": source_language})
+    return translated
 
 
 def summarize(query, llm, vector_store, search_image=False):

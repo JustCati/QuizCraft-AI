@@ -27,7 +27,4 @@
 
         Source language:
         {source_language}
-
-        Output
-        {translated_content}
     '''
