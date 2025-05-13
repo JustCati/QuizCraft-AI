@@ -71,10 +71,16 @@ class VectorStore():
 
 
     def __index_text(self, text):
-        language_classifier = cl.user_session.get("language_classifier")
+        try:
+            language_classifier = cl.user_session.get("language_classifier")
+        except:
+            language_classifier = None
         if language_classifier is None:
             language_classifier = LanguageClassifier(model_name="qanastek/51-languages-classifier", device="cuda")
-            cl.user_session.set("language_classifier", language_classifier)
+            try:
+                cl.user_session.set("language_classifier", language_classifier)
+            except:
+                pass
 
         chunks = self.__get_chunks(text)
         for chunk in chunks:
