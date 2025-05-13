@@ -206,11 +206,11 @@ def generate_queries_goldens(args):
         input = res.input
         expected_output = res.expected_output
 
-        if language_classifier.classify(input).lower() != "english":
-            input = translate(input, local_model)
+        if language_classifier.classify(input).lower() != "en":
+            input = translate(input, local_model, "it")
 
-        if language_classifier.classify(expected_output).lower() != "english":
-            expected_output = translate(expected_output, local_model)
+        if language_classifier.classify(expected_output).lower() != "en":
+            expected_output = translate(expected_output, local_model, "it")
 
         data[key] = {
             "query": input,

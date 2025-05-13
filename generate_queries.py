@@ -89,7 +89,7 @@ def main():
 
     styling_config = StylingConfig(
             input_format="University slides written in English or Italian",
-            task="Generate a question that a student might ask about the text, in Italian. Do not include the answer. Do not be too specific. Do not cite the text verbatim, paraphrase when possible. Generate the question in Italian.",
+            task="Generate a question that a student might ask about the text, in English. Do not cite the text verbatim, paraphrase when possible. Generate the question in English.",
             scenario="A student is preparing for an exam and wants to test their understanding of the material or want an explanation of the content.",
         )
     synthesizer = Synthesizer(model=model, 
