@@ -1,6 +1,7 @@
-import os
 import asyncio
 import chainlit as cl
+from io import StringIO
+from hashlib import sha256
 from chainlit.input_widget import Select, Switch, Slider
 
 from src.text.vector import VectorStore
@@ -19,6 +20,16 @@ def get_chat_history():
     return chat_history
 
 
+def calculate_hash(text):
+    BUFFERSIZE = 65536
+    hasher = sha256()
+
+    with StringIO(text) as f:
+        buffer = f.read(BUFFERSIZE)
+        while len(buffer) > 0:
+            hasher.update(buffer.encode())
+            buffer = f.read(BUFFERSIZE)
+    return hasher.hexdigest()
 
 
 async def create_vector_store() -> VectorStore:
