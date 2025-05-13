@@ -13,6 +13,7 @@
 
             1. Answer only using the provided context. If the context contains sufficient information to answer the query, provide a precise, well-structured response, without referring to general knowledge or external sources.
             2. If you don't know what to say, just say that you don't know.
+            3. Answer in Italian.
         '''
 
     user = '''

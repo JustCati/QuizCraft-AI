@@ -79,7 +79,7 @@ async def main():
     step = [("Creating vector store", init_vector_store)]
     await show_sequential_progress(step)
     await setup_agent(settings)
-    await cl.make_async(load_classifier)()
+    await load_classifier()
 
     vector_store = cl.user_session.get("vector_store")
     if len(vector_store.vector_store.get()["ids"]) == 0:

@@ -117,25 +117,30 @@ def rewrite_query(query, llm, history, history_length=10):
 
 
 def translate(query, llm, source_language="it"):
-        with open(os.path.join("src", "model", "prompts", "translation.toml"), "r") as f:
-            prompts = toml.load(f)
-            system_prompt = prompts["prompts"]["system"]
-            user_prompt = prompts["prompts"]["user"]
-        
-        prompt = ChatPromptTemplate.from_messages([
-                ("system", system_prompt),
-                ("user", user_prompt),
-            ])
-        
-        rag_chain = (
-            prompt
-            | llm
-            | StrOutputParser()
-        )
-        
-        source_language = "italian" if source_language == "it" else "english"
-        return rag_chain.invoke({"source_text": query,
-                                 "source_language": source_language})
+    class Translated(BaseModel):
+        translated_content: str = Field(description="Translated query.")
+    
+    with open(os.path.join("src", "model", "prompts", "translation.toml"), "r") as f:
+        prompts = toml.load(f)
+        system_prompt = prompts["prompts"]["system"]
+        user_prompt = prompts["prompts"]["user"]
+    
+    parser = JsonOutputParser(pydantic_object=Translated)
+    
+    prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("user", user_prompt),
+    ]).partial(translated_content=parser.get_format_instructions())
+    
+    rag_chain = (
+        prompt
+        | llm
+        | parser
+    )
+    
+    source_language = "italian" if source_language == "it" else "english"
+    return rag_chain.invoke({"source_text": query,
+                                "source_language": source_language})["translated_content"]
 
 
 def summarize(query, llm, vector_store, search_image=False):
@@ -179,7 +184,9 @@ def summarize(query, llm, vector_store, search_image=False):
 
     answer = rag_chain.invoke({"context": context,
                              "query": query}), image if search_image else None
+    text_answer = answer[0]
+    image_answer = answer[1]
 
-    if language_classifier.classify(answer[0]) != "it":
-        translated_answer = translate(answer[0], llm, "en")
-    return translated_answer, answer[1]
+    if language_classifier.classify(text_answer) != "it":
+        text_answer = translate(text_answer, llm, "en")
+    return text_answer, image_answer
