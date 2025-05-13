@@ -84,7 +84,6 @@ class VectorStore():
         chunks = self.__get_chunks(text)
         for chunk in chunks:
             if language_classifier.classify(chunk.page_content) != "en":
-                print(f"Text {chunk.page_content} is not in English. Translating.")
                 chunk.page_content = translate(chunk.page_content, self.translator, "it")
 
             chunk_hash = self.__calculate_hash(chunk.page_content)
