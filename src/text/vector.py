@@ -37,7 +37,10 @@ class VectorStore():
         
         self.img_dir = os.path.join("data", "images")
         os.makedirs(self.img_dir, exist_ok=True)
-        cl.user_session.set("img_dir", self.img_dir)
+        try:
+            cl.user_session.set("img_dir", self.img_dir)
+        except:
+            pass
 
 
     def clean(self):
