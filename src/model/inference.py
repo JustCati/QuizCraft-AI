@@ -132,9 +132,9 @@ def summarize(query, llm, vector_store, search_image=False, wrongly_rewritten_qu
         context = ""
         for doc in docs:
             if doc.metadata.get("type") == "text":
-                context += f"Text: {doc.page_content}\n\n"
+                context += f"{doc.page_content}\n\n"
             elif doc.metadata.get("type") == "image":
-                context += f"Image: {doc.metadata.get('img_caption')}\n\n"
+                context += f"{doc.metadata.get('img_caption')}\n\n"
         return context
 
 
