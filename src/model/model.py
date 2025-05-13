@@ -136,8 +136,8 @@ class LanguageClassifier():
         self.model.eval()
         
         self.vocabulary = {
-            "it-IT": "Italian",
-            "en-US": "English",
+            "it-IT": "italian",
+            "en-US": "english",
         }
 
 
@@ -145,4 +145,4 @@ class LanguageClassifier():
         res = self.classifier(text)
         lang_key = res[0]['label']
         lang = self.vocabulary.get(lang_key, "Unknown")
-        return lang
+        return lang.lower()
