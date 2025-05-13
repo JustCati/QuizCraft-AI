@@ -4,6 +4,8 @@ import base64
 import chainlit as cl
 from pydantic import BaseModel, Field
 
+from src.model.model import LanguageClassifier
+
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, AIMessage
@@ -124,6 +126,26 @@ def rewrite_query(query, llm, history, history_length=10, wrongly_rewritten_quer
         "user_query": query
     })["rewritten_query"]
 
+
+
+def translate(query, llm):
+        with open(os.path.join("src", "model", "prompts", "translation.toml"), "r") as f:
+            prompts = toml.load(f)
+            system_prompt = prompts["prompts"]["system"]
+            user_prompt = prompts["prompts"]["user"]
+        
+        prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                ("user", user_prompt),
+            ])
+        
+        rag_chain = (
+            prompt
+            | llm
+            | StrOutputParser()
+        )
+
+        return rag_chain.invoke({"source_text": query})
 
 
 @ensure_language_consistency
