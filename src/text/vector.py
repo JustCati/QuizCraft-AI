@@ -97,6 +97,8 @@ class VectorStore():
 
 
     def __index_image(self, image, caption=""):
+        if not isinstance(caption, str) and isinstance(caption, list):
+            caption = " ".join(caption)
         most_similar_img_score = self.vector_store.similarity_search_by_image_with_relevance_score(
             image,
             k=1,
