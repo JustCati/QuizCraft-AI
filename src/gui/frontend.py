@@ -70,6 +70,11 @@ async def main():
             "id": "questionnaire",
             "icon": "message-circle-question", 
             "description": "Scrivi la materia di cui vuoi generare un questionario.",
+        },
+        {
+            "id": "upload",
+            "icon": "file", 
+            "description": "Carica uno o più file PDF o immagini (PNG, JPG).",
         }
     ])
 
@@ -119,6 +124,24 @@ async def main(message: cl.Message):
             content="Queste sono le immagini salvate.",
             elements=saved_images,
         ).send()
+        return
+
+    if message.command == "upload":
+        uploaded = None
+        while uploaded == None:
+             uploaded = await cl.AskFileMessage(
+                content="Please upload one or multiple file/s (PDF, PNG, JPG) [max 20 files]", 
+                accept=["application/pdf", "image/png", "image/jpg", "image/jpeg"],
+                max_files=50,
+                max_size_mb=20,
+                timeout=360
+            ).send()
+
+        await show_update_message(
+            ["Indexing files", "✅ Files processed successfully!"], 
+            index_files, 
+            uploaded
+        )
         return
 
     if len(message.elements) > 0:
