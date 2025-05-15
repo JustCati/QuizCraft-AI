@@ -67,11 +67,6 @@ async def main():
             "description": "( . ) Mosta le immagini salvate. \n (query) Interroga il modello con una query su un'immagine.",
         },
         {
-            "id": "questionnaire",
-            "icon": "message-circle-question", 
-            "description": "Scrivi la materia di cui vuoi generare un questionario.",
-        },
-        {
             "id": "upload",
             "icon": "file", 
             "description": "Carica uno o più file PDF o immagini (PNG, JPG).",
@@ -169,9 +164,6 @@ async def main(message: cl.Message):
                                                             llm=llm,
                                                             history=chat_history)
             print(f"USER QUERY REWRITTEN: {user_query}")
-
-        if message.command == "questionnaire":
-            user_query = f"Genera un questionario basato sui file indicizzati di {user_query}."
 
         answer, image = await cl.make_async(summarize)(
             query=user_query,
